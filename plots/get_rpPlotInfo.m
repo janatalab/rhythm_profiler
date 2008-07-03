@@ -1,0 +1,62 @@
+% Obtains generic rhythm profile (rp) struct info for plotting
+%
+% script that is called at the beginning of many of the
+% rhythm_profiler functions. Obtains generic rhythm profile plot info
+% useful for multiple plots (rp output, rp energy, mean energy, etc)
+%
+%
+%
+% Copyright (c) 2007 The Regents of the University of California
+% All Rights Reserved
+%
+% Author(s):
+% Stefan Tomic 09/2007
+
+thisRPCols = set_var_col_const(thisRP.vars);
+Fs = thisRP.data{thisRPCols.Fs};
+resonFreqs = thisRP.data{thisRPCols.resonatorFreqs};
+
+%make sure resonFreqs is a column vector to construct the
+%proper label string matrix
+if(size(resonFreqs,2) > 1)
+  resonFreqs = resonFreqs';
+end
+  
+nResons = length(resonFreqs);
+freqMin = 1;
+if(isfield(params,'maxResonFreqPlot'))
+  freqMax = find(resonFreqs < params.maxResonFreqPlot,1,'last');
+else
+  freqMax = length(resonFreqs);
+end
+
+resIdxVector = [1:nResons];
+resonFreqTick = [freqMin:floor(freqMax./params.numResonTicks):freqMax];
+resonFreqLabel = num2str(resonFreqs(resonFreqTick),'%.2f');
+resEnergy = thisRP.data{thisRPCols.resonatorEnergy};
+
+%if timelim is not set, then we can use the stored stdEnergy and
+%meanEnergy. Otherwise, we need to recalculate them to correspond
+%to the time limits being displayed.
+if(~isfield(params,'timeLim'))
+  stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
+  meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
+else
+  tempTimeV = [params.timeLim(1)*Fs:params.timeLim(2)*Fs]+1;%add one to allow
+                                               %for starting at
+                                               %time t=0 
+  stdEnergy = std(thisRP.data{thisRPCols.resonatorEnergy}(:,tempTimeV),[],2);
+  meanEnergy =  mean(thisRP.data{thisRPCols.resonatorEnergy}(:,tempTimeV),2);
+end
+
+minMeanEnergy = min(meanEnergy);
+maxMeanEnergy = max(meanEnergy);
+energyMaxVal = max(resEnergy(:));
+
+nTimeSamps = size(resEnergy,2);
+timeVector = [0:nTimeSamps-1]./Fs;
+timeTick = [0:params.timeTickRes:timeVector(end)];
+
+
+
+
