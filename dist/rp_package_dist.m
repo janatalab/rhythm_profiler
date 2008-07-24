@@ -2,6 +2,7 @@
 
 GENERATE_DOCUMENTATION = 0;
 EDIT_FILES = 0;
+DISTRIBUTE_TO_ATONAL = 0;
 
 home_path = '/home/stefan/';
 relative_dist_path = 'btb/';
@@ -68,8 +69,8 @@ pathRep = {'/home/stefan/svn/public/matlab/database','utils';...
 	   '/home/stefan/svn/private/matlab/event_objects','event_objects';...
 	   '/home/stefan/svn/private/matlab/ipem','proc';...
 	   '/home/stefan/svn/private/matlab/ipem/rp_modules','rp_modules';...
-	   '/home/stefan/svn/private/matlab/projects/rhythm_profiler/v2/params','proc/params';...
-	   '/home/stefan/svn/private/matlab/projects/rhythm_profiler/v2','.';...
+	   '/home/stefan/svn/private/matlab/projects/rhythm_profiler/params','proc/params';...
+	   '/home/stefan/svn/private/matlab/projects/rhythm_profiler','.';...
 	   '/home/stefan/svn/thirdparty/matlab/miditoolbox','midi';...
 	   '/home/stefan/svn/private/matlab/utils/converters','utils';...
        };
@@ -113,8 +114,10 @@ else
     m2html('mfiles',relative_dist_path,'htmldir',fullfile(home_path,'documentation'),'recursive','on');
     eval(['!mv ' fullfile(home_path,'documentation') ' '  relative_dist_path]);
     %deleting old documentation
-    eval(['!ssh stefan@atonal rm -r ' fullfile(www_path,'documentation')]);
-    eval(['!scp -r ' fullfile(relative_dist_path,'documentation') ' atonal:' www_path]);
+    if(DISTRIBUTE_TO_ATONAL)
+      eval(['!ssh stefan@chromatic.cmb.ucdavis.edu rm -r ' fullfile(www_path,'documentation')]);
+      eval(['!scp -r ' fullfile(relative_dist_path,'documentation') ' chromatic.cmb.ucdavis.edu:' www_path]);
+    end
   end
   
   %copy the readme file
@@ -126,9 +129,11 @@ else
   %tarball everything
   eval(['!tar -C ' home_path ' -cf ' fullfile(home_path,dist_file) ' ' relative_dist_path ' --gzip']);
   
-  %copy the tarball to atonal
-  eval(['!scp ' fullfile(home_path,dist_file) ' atonal:' www_path]);
-
+  if(DISTRIBUTE_TO_ATONAL)
+    %copy the tarball to atonal
+    eval(['!scp ' fullfile(home_path,dist_file) ' chromatic.cmb.ucdavis.edu:' www_path]);
+  end
+  
 end
   
 fclose(fid);
