@@ -1,4 +1,21 @@
 function outData = get_resonPeakInfo(thisRP,params)
+% Retrieves peak frequencies and peak widths of an RP structure
+%
+% outData = get_resonPeakInfo(thisRP,params)
+%
+% This script calls various other functions for plotting resonator
+% bank outputs, periodicity surfaces, average periodicity surfaces
+% (APS), mean periodicity profiles (MPP), and input signals.
+%
+% This function passes the params struct to find_peaks.m
+% Please see the discription for that function for details on params.
+%
+% Copyright (c) 2007 The Regents of the University of California
+% All Rights Reserved
+%
+% Author(s):
+% Stefan Tomic 3/07
+%
 
 thisRPCols = set_var_col_const(thisRP.vars);
 meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};

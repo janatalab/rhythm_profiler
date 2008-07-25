@@ -19,8 +19,11 @@
 rp_proc_dir = '/home/stefan/wav_files/';
 input_file_pattern = '*.wav';
 
-rp_proc_dir = '/home/stefan/midi_files/';
-input_file_pattern = '*.mid';
+%Remove the comment marks on the following two lines
+%and set your path if you are running btb on midi files instead of
+%wav files
+%rp_proc_dir = '/home/stefan/midi_files/';
+%input_file_pattern = '*.mid';
 
 [pth,fn,ext] = fileparts(input_file_pattern);
 
@@ -37,7 +40,7 @@ switch (ext)
 				    'input_type','ani','gain_type','beta_distribution',...
 				    'perform_mulawCompression',0);
   params.ipem.glob.process = {'ani','rp'};
-  params.plot.perform = {'plotBands','plotBandEnergies', 'resonEnergy','meanEnergy','stdEnergy','findPeaks','showInput'};
+  params.plot.perform = {'plotBands','plotBandEnergies', 'resonEnergy','meanEnergy','stdEnergy','findPeaks'};
   params.plot.inputSigType = 'wvf'; 
  
  case {'.mid','.midi'}
@@ -53,7 +56,7 @@ end
 
 %set this to a list of calculations you wish to force recalculation
 %(saved calculations with identical parameters will be overwritten)
-params.ipem.glob.force_recalc = {};
+params.ipem.glob.force_recalc = {'ani','rp'};
 
 %list of calculations that will be saved. Currently set to all
 %processed calculations

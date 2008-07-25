@@ -22,6 +22,11 @@ SUBDIRECTORIES
 
 event_objects -   functions for initializing data structures used to describe auditory or MIDI events.
 
+midi -	        functions for reading MIDI files.
+
+jobs -	        wrapper scripts for running the algorithm and producing plots. The only file currently stored here is btb.m.  
+                  Edit btb.m to set the path of your audio or midi files and then call it to run the algorithm.
+
 proc -            functions for processing with the model. The entry point to the model is ipem_proc_series, 
 	        which contains all the basic procedures in our research lab that involve the IPEM toolbox. 
 	        The BTB algorithm only uses the ANI and RP (rhythm profiler) processes. ipem_proc_series.m calls 
@@ -100,4 +105,4 @@ If you have any questions regarding the algorithm or code, please feel free to e
 Stefan Tomic
 Center for Mind and Brain
 University of California, Davis
-02/05/2008
+07/24/2008
