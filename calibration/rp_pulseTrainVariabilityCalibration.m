@@ -1,7 +1,20 @@
-plotPath = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/calibration/iso_var_accent';
+%plotPath = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/calibration/';
+plotPath = '/data2/rhythm/rhythm_profiler/plots/meter_prediction';
 globals = rhythmTap_globals;
 
-filtType = 'comb';
+filtType = 'reson';
+
+
+%if this is set to 1, barFreq will be used rather than pulseFreq
+%bar freq determines the frequency of pulses based on the length of
+%the bar rather than duration between pulses
+USEBARFREQ = 1;
+
+pulseFreq = 6; %pulse frequency in Hz.
+barFreq = .5;
+
+%seed the random number generator, used for note occurrence, below
+rand('state',sum(100*clock));
 
 if(strcmp(filtType,'comb'))
   globals.respIPEMParams.rp = rp_paramGroups('param_group',...
@@ -11,14 +24,22 @@ if(strcmp(filtType,'comb'))
 elseif(strcmp(filtType,'reson'))  
   globals.respIPEMParams.rp = rp_paramGroups('param_group',...
 				   'reson_filterQSpacing_periodBasedDecay',...
-				   'input_type','aud','gain_type','constant',...
+				   'input_type','aud','gain_type','beta_distribution',...
 				   'perform_mulawCompression',0);
 end
 
 dur = 30.01;
-Fs = 100;
+Fs = 300;
 
-gaussFWHMms = 200;
+%theoretical predictions of note counts for places on a bar
+%for different meters (3/4, 4/4, and 6/8). If you want all notes to
+%be equally occurring, just use [1]
+noteOccurrence = {[4 0 2 0 3 0 2 0 3 0 2 0],...
+		  [5 0 2 0 3 0 2 0 4 0 2 0 3 0 2 0],...
+		  [4 0 2 0 2 0 3 0 2 0 2 0]};
+
+
+gaussFWHMms = 50;
 gaussFWHMsamps = floor(gaussFWHMms/1000*Fs);
 
 gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
@@ -28,62 +49,69 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 %stdDevsMs = [0 20 40 80];
 stdDevsMs = 0;
 
-%accents = {[1],[2],[3],[4],[5],[2 3]};
-accents = {[0],[2],[3],[2 3]};
-%accents = {[1]};
 
-%pulse frequency in Hz.
-pulseFreq = 1;
+metricLabels = {'meter = 3/4','meter = 4/4','meter = 6/8','alternate23'};
 
+accentPatterns = {[1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
+		   [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
+		   [1  0 .33  0 .33  0 .66   0  .33  0 .33  0],...
+		   [1  .66 1  .66  .66  ] };
 
-pulsePeriod = 1./pulseFreq;
-pulsePeriodSamps = round(pulsePeriod*Fs);
 
 for istd = 1:length(stdDevsMs)
-  for iaccent = 1:length(accents)
+  for iaccent = 1:length(accentPatterns)
+    
+    accentStruct = accentPatterns{iaccent};
+    accentStructLen = length(accentStruct);
+    
     devMs = stdDevsMs(istd);
     
     sigLen = round(dur*Fs);
     sig = zeros(sigLen,1);
+
+    if(USEBARFREQ)
+      pulsePeriod = 1./(barFreq*accentStructLen);
+    else
+      pulsePeriod = 1./pulseFreq;
+    end
+    pulsePeriodSamps = round(pulsePeriod*Fs);    
     
     onsetTimesSamps = [1:pulsePeriodSamps:sigLen];
     numOnsets = length(onsetTimesSamps);
-
+    
     if(devMs ~= 0)
       onsetDevsMs = randn(1,numOnsets-1).*devMs;
       onsetDevsSamps = round(onsetDevsMs./1000.*Fs);
     else
       onsetDevsSamps = zeros(1,numOnsets-1);
     end
-  
+    
     onsetTimesSamps(2:end) = onsetTimesSamps(2:end) + onsetDevsSamps;
     onsetTimesSamps(find(onsetTimesSamps > sigLen)) = [];
-
-    accentStruct = accents{iaccent};
     
-    if(length(accentStruct) == 1)
-      sig(onsetTimesSamps) = 0.5;
-      sig(onsetTimesSamps(1:accentStruct:end)) = 1;
-    else
-      sig(onsetTimesSamps) = 0.5;
-      accLen = sum(accentStruct);
-      sig(onsetTimesSamps(1:accLen:end)) = 1;
-      sig(onsetTimesSamps(1+accentStruct(1):accLen:end)) = 1;
-    end
+
+    accentIndices = mod([0:numOnsets-1],accentStructLen)+1;
+    sig(onsetTimesSamps) = accentStruct(accentIndices);
+    
 
     %CONVOLVING WITH GAUSSIAN
     sig = conv(sig,gaussian);
-
+    
     aud_st = init_aud('Fs',Fs,'nchan',1,'wvf',sig);
     
     params{1}.ipem = globals.respIPEMParams;
-       
+    params{1}.ipem.glob.save_calc = {};
+    
+    params{1}.ipem.rp.resonatorBank.peakFinder.thresh = 0;
+    params{1}.ipem.rp.resonatorBank.peakFinder.perform = {};
+    params{1}.ipem.rp.resonatorBank.peakFinder.minPeakHeight = 0.1;
+    
     ipemOut = ipem_proc_series(aud_st,params{1}.ipem);
     ipemOutCols = set_var_col_const(ipemOut.vars);
     rp = ipemOut.data{ipemOutCols.rp};
     
     params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
-		    'findPeaks','showInput'}; %'resonOutput',
+		    'findPeaks','ratioProb','showInput'}; %'resonOutput',
     params{2}.freqLegend = 1;
     params{2}.legendParams.minHz = 1;
     params{2}.legendParams.maxHz = 5;
@@ -98,22 +126,31 @@ for istd = 1:length(stdDevsMs)
     params{2}.color = 0;
     params{2}.savePlot = 0;
     params{2}.separatePages = 1;
-    params{2}.peakFinder.thresh = 0.1;
+    params{2}.peakFinder.thresh = 0;
     params{2}.peakFinder.perform = {};
+    params{2}.peakFinder.minPeakHeight = 0;
     %params{2}.resonOut.clim = [-7 7]*10^-3;
     %params{2}.resEnergy.clim = [0 3]*10^-3;
     %params{2}.meanEnergy.ylim = [0 3.5]*10^-3;
-  
+    
     params{2}.meanEnergy.numticks = 4;
     params{2}.meanEnergy.yTickLabelFmt = '%.3f';
-    accentString = sprintf('acc=%d%d',accentStruct);
+    
+    if(USEBARFREQ)
+      freqString = sprintf('Bar=%.1f Hz',barFreq);
+    else
+      freqString = sprintf('Pulse=%.1f Hz',pulseFreq);
+    end
+    
+    metricFileLabels = regexprep(metricLabels,'[\s=/]','');
+    freqFileLabel = regexprep(freqString,'[\s=/]','');
     
     if(devMs ~= 0)
-      params{2}.fig.title = sprintf('iso variability test (%.1f Hz, std = %2d ms) %s',pulseFreq,devMs,accentString);
+      params{2}.fig.title = sprintf('iso variability test (%s, std = %2d ms) %s',freqString,devMs,metricLabels{iaccent});
     else
-      params{2}.fig.title = sprintf('iso variability test (%.1f Hz, no deviation) %s',pulseFreq,accentString);
+      params{2}.fig.title = sprintf('iso variability test (%s, no deviation) %s',freqString,metricLabels{iaccent});
     end
-    params{2}.plotFname = sprintf('iso_variability_test_gaussInput_%s_%.1f_Hz_%dms_dev_%s.ps',filtType,pulseFreq,devMs,accentString);
+    params{2}.plotFname = sprintf('iso_variability_test_gaussInput_%s_%s_%dms_dev_%s.ps',filtType,freqFileLabel,devMs,metricFileLabels{iaccent});
     
     inData{1} = rp{1};
     inData{2} = aud_st;
@@ -122,3 +159,4 @@ for istd = 1:length(stdDevsMs)
     
   end
 end
+

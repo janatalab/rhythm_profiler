@@ -37,7 +37,7 @@ resEnergy = thisRP.data{thisRPCols.resonatorEnergy};
 
 %if timelim is not set, then we can use the stored stdEnergy and
 %meanEnergy. Otherwise, we need to recalculate them to correspond
-%to the time limits being displayed.
+%to the time limits being displayed. Same goes for our peak picker.
 if(~isfield(params,'timeLim'))
   stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
   meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
@@ -46,7 +46,15 @@ else
                                                %for starting at
                                                %time t=0 
   stdEnergy = std(thisRP.data{thisRPCols.resonatorEnergy}(:,tempTimeV),[],2);
-  meanEnergy =  mean(thisRP.data{thisRPCols.resonatorEnergy}(:,tempTimeV),2);
+  meanEnergy =  mean(thisRP.data{thisRPCols.resonatorEnergy}(:, ...
+						  tempTimeV),2);
+  
+  if(~isfield(params,'peakFinder'))
+    params.peakFinder = struct();
+    params.peakFinder.minPeakHeight = 0.1;
+  end
+  thisRP.data{thisRPCols.peakInfo} = get_resonPeakInfo(thisRP,params.peakFinder);
+  
 end
 
 minMeanEnergy = min(meanEnergy);

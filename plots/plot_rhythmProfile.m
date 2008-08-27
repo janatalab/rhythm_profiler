@@ -156,7 +156,11 @@ if(ismember('resonEnergy',params.perform))
   
   if(ismember('findPeaks',params.perform))
     params.fig.axLocs = union(params.fig.axLocs,...
-			      'rectPlot_top');
+			      'smallRectPlot_top');
+  end
+  
+  if(ismember('ratioProb',params.perform))
+    params.fig.axLocs = union(params.fig.axLocs,'smallRectPlot_middle');
   end
   
   if(ismember('showInput',params.perform))
@@ -174,10 +178,15 @@ if(ismember('resonEnergy',params.perform))
   end
 
   if(ismember('findPeaks',params.perform))
-    topAx = get_axhandle(axHList,'rectPlot_top');
+    topAx = get_axhandle(axHList,'smallRectPlot_top');
     plot_findPeaks(topAx,thisRP,params);
   end
 
+  if(ismember('ratioProb',params.perform))
+    middleAx = get_axhandle(axHList,'smallRectPlot_middle');
+    plot_ratioProb(middleAx,thisRP,params);
+  end
+  
   if(ismember('showInput',params.perform) && (length(audArray) > ...
 					      0))
     params.xlim = get(bottomAx,'xlim');

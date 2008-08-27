@@ -34,24 +34,18 @@ thisRP = inData;
 thisRPCols = set_var_col_const(thisRP.vars);
 get_rpPlotInfo;
 
-%params.peakFinder.Fs = Fs;
-%peakIdxs = find_peaks(meanEnergy,params.peakFinder);
-%peakFreqs = resonFreqs(peakIdxs);
-%maxPeakEnergyFreq = resonFreqs(find(meanEnergy == max(meanEnergy(peakIdxs)),1,'first'));
-%normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;
-%widths = get_rp_peakWidths('rpEnergy',meanEnergy,'peakFreqs',peakFreqs,'resonFreqs',resonFreqs)';
-
-%nPeakFreqs = length(peakFreqs);
-
 peakInfo = thisRP.data{thisRPCols.peakInfo};
 peakInfoCols = set_var_col_const(peakInfo.vars);
 peakFreqs = peakInfo.data{peakInfoCols.peak};
 normPeakFreqs = peakInfo.data{peakInfoCols.norm};
 widths = peakInfo.data{peakInfoCols.width};
+heights = peakInfo.data{peakInfoCols.normHeight};
+approxRatios = peakInfo.data{peakInfoCols.approxRatios};
 
-peakFindHeader = sprintf('Peak   Norm   Width\n');
-peakFindText = [peakFindHeader sprintf('%0.2f%8.2f%9.2f\n', ...
-					 [peakFreqs normPeakFreqs widths]')];
+
+peakFindHeader = sprintf('Peak   Norm   Width   normHeight   Ratio\n');
+peakFindText = [peakFindHeader sprintf('%0.2f%8.2f%9.2f%8.2f%14d\n', ...
+					 [peakFreqs normPeakFreqs widths heights approxRatios]')];
 axes(ax);
 set(ax,'visible','off');
 t = text(0,1,peakFindText,'VerticalAlignment','top');

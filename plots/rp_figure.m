@@ -49,6 +49,7 @@ end
 leftMargin = 0.1;
 rightMargin = 0.1;
 bottomMargin = 0.08;
+spacer = 0.03;
 
 topMargin = 0.08;
 middle = bottomMargin./2 + (1 - topMargin)./2;
@@ -91,6 +92,16 @@ end
 if(ismember('rectPlot_top',params.axLocs))
   ax_h(end+1) = axes('position',[leftMargin middle rectPlotWidth rectPlotHeight]);
   set(ax_h(end),'tag','rectPlot_top');
+end
+
+if(ismember('smallRectPlot_top',params.axLocs))
+  ax_h(end+1) = axes('position',[leftMargin middle+(rectPlotHeight/2)+spacer*3 rectPlotWidth rectPlotHeight/2]);
+  set(ax_h(end),'tag','smallRectPlot_top');
+end
+
+if(ismember('smallRectPlot_middle',params.axLocs))
+  ax_h(end+1) = axes('position',[leftMargin middle+spacer*2 rectPlotWidth rectPlotHeight/2]);
+  set(ax_h(end),'tag','smallRectPlot_middle');
 end
 
 if(ismember('rectPlot_bottom',params.axLocs))

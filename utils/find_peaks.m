@@ -37,6 +37,10 @@ elseif(size(inSig,1) > 1 && size(inSig,2) > 1)
   error('Input signal must be a vector');
 end
 
+if(~isfield(params,'thresh'))
+  params.thresh = 0;
+end
+
 if(isfield(params,'perform') && ismember('lowPass',params.perform))
   Fs = params.Fs;
   lpFreq = params.lpFreq;

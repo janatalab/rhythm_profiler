@@ -8,7 +8,7 @@ lengthSecs = 8;
 timeVector = 1/Fs:1/Fs:lengthSecs+1/Fs;
 params.resonatorBank.Fs = Fs;
 
-impFreq = 1.00625;
+impFreq = 1.0;
 impPeriod = 1./impFreq;
 impPeriod2 = 0.25;
 anti_phase_dur = impPeriod/2;
