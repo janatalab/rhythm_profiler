@@ -30,7 +30,7 @@ catch
   params.peakRatio = struct();
 end
 
-peakIdxs = find_pvsldteaks(meanEnergy,params)';
+peakIdxs = find_peaks(meanEnergy,params)';
 peakHeights = peak_heights('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs);
 if(isfield(params,'minPeakHeight'))
   goodPeakMask = peakHeights >= params.minPeakHeight;
