@@ -21,25 +21,47 @@ an{na}.params.variances = globals.input.variances;
 an{na}.params.varianceQuant = globals.input.varianceQuant;
 an{na}.params.exemplarsPerClass = globals.input.exemplarsPerClass;
 an{na}.params.classes = globals.input.classes;
-an{na}.params.plotPatterns = 1;
-an{na}.params.savePath = globals.input.savePath;
-
+an{na}.params.plotPatterns = 0;
+an{na}.params.savePath = globals.paths.dataPath;
 
 na=na+1;
 an{na}.name = 'ipem_proc_series';
 an{na}.fun = @ipem_proc_series;
-an{na}.params = globals.ipemProcParams;
 an{na}.requires = {struct('name','gen_accent_impulses','vars','audFileList')};
+an{na}.params = globals.ipemProcParams;
+an{na}.params.plot.process = {'rp'};
+%an{na}.params.plot.rp.peakFinder.thresh = 0.25;
+%an{na}.params.plot.rp.peakFinder.perform = {};
+%an{na}.params.plot.rp.peakFinder.lpFreq  = 20;
+an{na}.params.plot.rp.peakFinder.ratioVals = an{na}.params.rp.resonatorBank.peakFinder.ratioVals;
+an{na}.params.plot.rp.peakFinder.ratioLabels = an{na}.params.rp.resonatorBank.peakFinder.ratioLabels;
+an{na}.params.plot.rp.freqLegend = 0;
+an{na}.params.plot.rp.inputSigType = 'wvf';
+an{na}.params.plot.rp.perform = {'resonEnergy','meanEnergy','stdEnergy','findPeaks','plotMeanEnergy','showInput','ratioProb'};
+an{na}.params.plot.rp.colorbar = 1;
+an{na}.params.plot.rp.color = 0;
+an{na}.params.plot.rp.separatePages = 0;
+an{na}.params.plot.rp.savePlot = 1;
+an{na}.params.plot.rp.savePath = globals.paths.plotPath;
+an{na}.params.plot.rp.timeTickRes = 2.0;
+an{na}.params.plot.rp.xminortick = 'off';
+an{na}.params.plot.rp.numResonTicks = 8;
+an{na}.params.plot.rp.meanEnergy.numticks = 4;
+an{na}.params.plot.rp.plotFname = 'meter_exemplar_plots';
 
 na=na+1;
 an{na}.name = 'train_meterEstimator';
 an{na}.fun = @train_meterEstimator;
 an{na}.requires = {struct('name','ipem_proc_series'),struct('name','gen_accent_impulses')};
+an{na}.params.perform = {'plotFailedTests'};
 an{na}.params.nnet.percentTrain = globals.nnet.percentTrain;
 an{na}.params.nnet.adaptFcn = globals.nnet.adaptFcn;
 an{na}.params.nnet.trainParams.epochs = globals.nnet.trainParams.epochs;
 an{na}.params.nnet.trainParams.show = globals.nnet.trainParams.show;
-
+an{na}.params.nnet.nRuns = globals.nnet.nRuns;
+an{na}.params.ratioLabels = globals.ipemProcParams.rp.resonatorBank.peakFinder.ratioLabels;
+an{na}.params.plot = an{2}.params.plot.rp;
+an{na}.params.plot.plotFname = 'meter_exemplar_failed_tests';
 
 
 

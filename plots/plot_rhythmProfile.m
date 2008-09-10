@@ -68,7 +68,6 @@ end
 get_rpPlotInfo;
 numBands = size(thisRP.data{thisRPCols.resonatorOut},1);
 
-
 if(~isfield(params,'fig') || (~isfield(params.fig,'title')))
   params.fig.title = '';
 end

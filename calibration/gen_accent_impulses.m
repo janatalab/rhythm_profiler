@@ -4,7 +4,7 @@ function outData = gen_accent_impulses(inData,params)
 rand('state',sum(100*clock));
 
 
-barFreq = params.barFreq;
+barFreqRange = params.barFreq;
 dur = params.dur;
 Fs = params.Fs;
 gaussFWHMms = params.gaussFWHMms;
@@ -76,9 +76,8 @@ for iaccent = 1:length(accentPatterns)
       %the first index of accentLevelAmps should be 1 (max
       %amplitude), so we're only going to vary this by subtracting.
       %The rest are varied by plus or minus the variance value
-      varAccentAmps = accentLevelAmps(1) - rand(1).*thisVariance;
       randPosNeg1 = rand(size(accentLevelAmps(2:end))).*2 - 1;
-      varAccentAmps = [varAccentAmps (accentLevelAmps(2:end) + randPosNeg1.*thisVariance)];
+      varAccentAmps = [accentLevelAmps(1) (accentLevelAmps(2:end) + randPosNeg1.*thisVariance)];
       varAccentStructs(iVarAcc,:) = varAccentAmps(accentLevelLocs);
       
     end
@@ -90,6 +89,17 @@ for iaccent = 1:length(accentPatterns)
   for iVarAcc = 1:nVarAccentStructs
     sigLen = round(dur*Fs);
     sig = zeros(sigLen,1);
+    
+    %if barFreqRange is of size 2, this is used as a range from
+    %which a random bar frequency is chosen. Otherwise, if it is of
+    %length 1, then that value will be used.
+    if(length(barFreqRange) == 2)
+      barFreq = rand*abs(diff(barFreqRange)) + min(barFreqRange);
+    elseif(barFreqRange == 1)
+      barFreq = barFreqRange;
+    else
+      error('params.barFreq is not of length 1 or 2');
+    end
     
     pulsePeriod = 1./(barFreq*accentStructLen);
     pulsePeriodSamps = round(pulsePeriod*Fs);    
@@ -103,7 +113,7 @@ for iaccent = 1:length(accentPatterns)
     %CONVOLVING WITH GAUSSIAN
     sig = conv(sig,gaussian);
     
-    aud_st = init_aud('Fs',Fs,'nchan',1,'wvf',sig);
+    aud_st = init_aud('Fs',Fs,'nchan',1,'wvf',sig,'tag',classes(iaccent));
     fstub = [regexprep(classes{iaccent},'[\s=/]','') 'var' sprintf('%0.4d',iVarAcc)];
     fPath = fullfile(savePath,[fstub '.mat']);
     save(fPath,'aud_st');

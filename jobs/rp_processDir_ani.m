@@ -13,8 +13,8 @@ filetype = '.wav';
 %directory with files to analyze
 %rp_test_dir = '/data2/rhythm/rhythm_profiler/tests/audio_files/meter_tests2';
 %rp_test_dir = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/groove_sequencer_tests';
-rp_dir_list = {'/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/plots/groove_seq_presets_90bpm'};
-
+%rp_dir_list = {'/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/plots/groove_seq_presets_90bpm'};
+rp_dir_list = {'/data2/rhythm/rhythm_profiler/martens_sq_study_audio'};
 for rp_test_dir = rp_dir_list
 
   rp_test_dir = rp_test_dir{1};
@@ -59,11 +59,15 @@ for rp_test_dir = rp_dir_list
     params{2}.plot.separatePages = 1;
     params{2}.plot.savePlot = 1;
     params{2}.plot.showInput = 0;
+    params{2}.plot.timeLim = [0 8];
     params{2}.plot.inputSigType = 'impulse';
     params{2}.plot.peakFinder.thresh = 0.25;
+    params{2}.plot.peakFinder.thresh = 0;
+    params{2}.plot.peakFinder.perform = {};
+    params{2}.plot.peakFinder.minPeakHeight = 0.1;
     params{2}.plot.peakFinder.perform = {};
     params{2}.plot.meanEnergy.numticks = 4;
-    params{2}.plot.perform = {'resonEnergy','meanEnergy','stdEnergy','findPeaks'};
+    params{2}.plot.perform = {'resonEnergy','meanEnergy','stdEnergy','findPeaks','ratioProb'};
     params{2}.plot.plotFname = 'rp_plots_beta_2_5.ps';
     plot_dir_rhythm_profile(flist,params{2});
   end

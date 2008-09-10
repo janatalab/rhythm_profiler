@@ -76,9 +76,14 @@ for iFile = 1:nFiles;
   clear audStruct;
 
   switch(ext)
-   case '.wav'
+   case {'.wav','.mat'}
 
-    pa = params_aud('path',path,'filename',[fstub ext]);
+    if(isfield(params,'srcMatVarName'))
+      pa =  params_aud('path',path,'filename',[fstub ext],'var_name',params.srcMatVarName);
+    else
+      pa = params_aud('path',path,'filename',[fstub ext]);
+    end
+    
     audStruct = new_aud(pa);
     inputPlotData = {audStruct};
    case {'.mid','*.midi'}

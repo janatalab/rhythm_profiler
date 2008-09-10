@@ -44,8 +44,24 @@ approxRatios = peakInfo.data{peakInfoCols.approxRatios};
 
 
 peakFindHeader = sprintf('Peak   Norm   Width   normHeight   Ratio\n');
-peakFindText = [peakFindHeader sprintf('%0.2f%8.2f%9.2f%8.2f%14d\n', ...
-					 [peakFreqs normPeakFreqs widths heights approxRatios]')];
+
+peakFindText = peakFindHeader;
+
+for idx = 1:length(peakFreqs)
+  if(iscell(approxRatios))  
+    if(isempty(approxRatios))
+      r = 'N/A';
+    else
+      r = approxRatios{idx};
+    end
+    newRow = sprintf('%0.2f%8.2f%9.2f%8.2f%14s\n', ...
+		     peakFreqs(idx),normPeakFreqs(idx),widths(idx),heights(idx),r);
+  else
+    newRow = sprintf('%0.2f%8.2f%9.2f%8.2f%14d\n', ...
+		     peakFreqs(idx),normPeakFreqs(idx),widths(idx),heights(idx),approxRatios(idx));
+  end
+  peakFindText = [peakFindText newRow];
+end
 axes(ax);
 set(ax,'visible','off');
 t = text(0,1,peakFindText,'VerticalAlignment','top');

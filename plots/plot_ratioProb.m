@@ -18,10 +18,16 @@ function outData = plot_ratioProb(ax,inData,params)
 % Author(s):
 % Stefan Tomic 8/20/2008
 
+
 try
-  numVals = params.numVals;
+  ratioLabels = params.peakFinder.ratioLabels;
+  numVals = length(ratioLabels);
 catch
-  numVals = 16;
+  try
+    numVals = params.numVals;
+  catch
+    numVals = 16;
+  end
 end
 
 rp = inData;
@@ -32,9 +38,20 @@ ratios = peakInfo.data{peakInfoCols.approxRatios};
 heights = peakInfo.data{peakInfoCols.normHeight};
 
 vals = zeros(1,numVals);
-vals(ratios) = heights;
+if(isnumeric(ratios))
+  vals(ratios) = heights;
+  bar(ax,vals,0.4,'k');
+else
+  [dummy,idxs1,idxs2] = intersect(ratioLabels,ratios);
+  vals(idxs1) = heights(idxs2);
+  bar(ax,vals,0.4,'k');
+  set(ax,'Xlim',[0 numVals+1]);
+  set(ax,'XTick',[1:numVals]);
+  set(ax,'XTickLabel',ratioLabels);
+  set(ax,'FontSize',8);
+end
+  
 
-bar(ax,vals,0.4,'k');
 set(ax,'xlim',[0 numVals + 1]);
 set(ax,'ylim',[0 1]);
 set(ax,'xtick',1:numVals);
