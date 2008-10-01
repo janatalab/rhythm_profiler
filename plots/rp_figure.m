@@ -100,7 +100,7 @@ if(ismember('smallRectPlot_top',params.axLocs))
 end
 
 if(ismember('smallRectPlot_middle',params.axLocs))
-  ax_h(end+1) = axes('position',[leftMargin middle+spacer*2 rectPlotWidth rectPlotHeight/2]);
+  ax_h(end+1) = axes('position',[leftMargin middle+spacer*2 rectPlotWidth+0.20 rectPlotHeight/2]);
   set(ax_h(end),'tag','smallRectPlot_middle');
 end
 

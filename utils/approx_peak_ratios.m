@@ -23,7 +23,7 @@ end
 try
   errorTolerance = params.errorTolerance;
 catch
-  errorTolerance = .04;
+  errorTolerance = .05;
 end
 
 try
@@ -45,7 +45,7 @@ switch(params.relativeTo)
     diffFreqs = abs(peakFreqs(iPeakFreq) - ratioVals);
     ratioIdx = find(diffFreqs == min(diffFreqs));
     errorPct = abs(ratioVals(ratioIdx) - peakFreqs(iPeakFreq))./ratioVals(ratioIdx);
-
+    errorVec(iPeakFreq) = errorPct;
     if(errorPct <= errorTolerance)
       approxRatios{iPeakFreq,1} = labels{ratioIdx}; 
     else

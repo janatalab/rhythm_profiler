@@ -2,7 +2,8 @@
 
 SAVEPLOT = 1;
 FMT = '-dpsc';
-plotDir = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/plots/rpStages';
+%plotDir = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/plots/rpStages';
+plotDir = '/data2/rhythm/rhythm_profiler/plots/btb_paper_figs';
 close all
 
 figprops = {'fontsize',12,'fontweight','bold'};
@@ -36,7 +37,7 @@ if(~exist('ipemProc','var'))
   ipem_params.ani = ani_paramGroups;
   ipem_params.rp = rp_paramGroups('param_group',...
 				  'reson_filterQSpacing_periodBasedDecay',...
-				  'input_type','ani','gain_type','weighted_partialHanning',...
+				  'input_type','ani','gain_type','beta_distribution',...
 				  'perform_mulawCompression',0);
   ipemProc = ipem_proc_series(stimulusID,ipem_params);
   ipemProcCols = set_var_col_const(ipemProc.vars);
@@ -91,18 +92,28 @@ for iPlot = 1:2
 	  'verticalalign','middle', 'fontsize', 18)
     end
   end
-  
-  set(anAx,'xtick',[],'ytick',[],figprops{:});
-%  anAx(end+1) = axes('position',[chanAxLPos .15 chanAxSize ]);
-%  plot(sig(40,:));
+
   set(anAx(:),'xtick',round(tTickSec*Fs));
   set(anAx(end),'xticklabel',tTickSec);
   set(anAx(1:end-1),'xticklabel',[]);
-  set(anAx(end),'ytick',[]);
   
   set(anAx,'xlim',xLimSec*Fs);
-  ylim = [min(min(sig(plot_chans,:))) ...
-	  max(max(sig(plot_chans,:)))];
+
+  
+  %ylim = [min(min(sig(plot_chans,:))) ...
+%	  max(max(sig(plot_chans,:)))];
+  %yTickVals = [ylim(1) (diff(ylim)+ylim(1))./2 ylim(2)];
+
+  if(iPlot == 1)
+    ylim = [-0.15 2];
+    yTickVals = [ylim(1) 1 ylim(2)];
+  elseif(iPlot == 2)
+    ylim = [0 0.35];
+    yTickVals = [ylim(1) diff(ylim)/2+ylim(1) ylim(2)];
+  end
+  
+  set(anAx,'ytick',yTickVals);
+  set(anAx(:),'yticklabel',{num2str(yTickVals(1),'%.2f'),num2str(yTickVals(2),'%.2f'),num2str(yTickVals(3),'%.2f')})
   set(anAx,'ylim',ylim);
   set(anAx,figprops{:});
 
@@ -140,13 +151,16 @@ ani.data{aniCols.filterFreqs}(iChan*rp.data{rpCols.params}.rp.sumAdjacentBands);
   end
 end
 
-set(dax,'ylim',[min(sig(:)) max(sig(:))]);
+set(dax,'ylim',[0 .5]);
 set(dax,'xlim',xLimSec*Fs);
-set(dax,'ytick',[]);
+set(dax,'ytick',[0 .2 .4]);
 set(dax,'xtick',[]);
 set(dax(:),'xtick',round(tTickSec*Fs));
 set(dax(end),'xticklabel',tTickSec);
 set(dax(1:end-1),'xticklabel',[]);
+
+
+
 xlabel('Time (s)',figprops{:});
 set(dax,figprops{:});
 
@@ -165,7 +179,6 @@ resonFreqs = rp.data{rpCols.resonatorFreqs};
 nResons = length(resonFreqs);
 resonTicks = [1:round(nResons/nResonTicks):nResons];
 resonTickLabels = num2str(resonFreqs(resonTicks),'%0.2f|');
-
 
 %plotting image of all reson filter outputs
 iPlot = 4;

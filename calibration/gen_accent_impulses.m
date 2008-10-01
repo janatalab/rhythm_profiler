@@ -95,7 +95,7 @@ for iaccent = 1:length(accentPatterns)
     %length 1, then that value will be used.
     if(length(barFreqRange) == 2)
       barFreq = rand*abs(diff(barFreqRange)) + min(barFreqRange);
-    elseif(barFreqRange == 1)
+    elseif(length(barFreqRange) == 1)
       barFreq = barFreqRange;
     else
       error('params.barFreq is not of length 1 or 2');

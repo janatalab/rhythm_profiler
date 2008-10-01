@@ -189,7 +189,7 @@ if(CALC_ERROR_CURVE)
   ylabel('Accuracy2 ( % )');
   
   if(SAVE_PLOTS)
-    fig1Path = fullfile(plotDir,'acc2_vs_window_width_beta_2_5_2xReson_99filters.jpg');
+    fig1Path = fullfile(plotDir,'acc2_vs_window_width_psitest.jpg');
     print(1,'-djpeg',fig1Path);
   end
   
@@ -203,7 +203,7 @@ if(PLOT_ERROR_HISTOGRAM)
   ylabel('Number of instances');
   
   if(SAVE_PLOTS)
-    fig2Path = fullfile(plotDir,'histogram_est_tempo_vs_correct_tempo_beta_2_5_99filters.jpg');
+    fig2Path = fullfile(plotDir,'histogram_est_tempo_vs_correct_psitest.jpg');
     print(2,'-djpeg',fig2Path);
   end
 
@@ -219,7 +219,7 @@ if(PLOT_PERF_VS_TEMPI)
   ylabel('log2(computed tempo/correct tempo)');
   
   if(SAVE_PLOTS)
-    fig3Path = fullfile(plotDir,'performance_ratio_vs_tempi_beta_2_5_99filters.jpg');
+    fig3Path = fullfile(plotDir,'performance_ratio_vs_tempi_psitest.jpg');
     print(3,'-djpeg',fig3Path);
   end
   

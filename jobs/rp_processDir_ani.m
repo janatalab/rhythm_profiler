@@ -24,7 +24,14 @@ for rp_test_dir = rp_dir_list
   params{1}.ipem = globals.stimIPEMParams;
   %CHANGED MAXVAL FOR ISMIR STIMS (PROBABLY NOT TOO IMPORTANT)
   %params{1}.ipem.ani.normalize_maxVal = 0.9;
-
+  params{1}.ipem.rp.resonatorBank.peakFinder.errorTolerance = .15;
+  params{1}.ipem.rp.resonatorBank.peakFinder.ratioVals = ...
+      [ 1/16 1/10 1/8 1/6 1/5 1/4 1/3 3/8 2/5 1/2 3/5 5/8 2/3 3/4 4/5 5/6 7/8 1 5/4 4/3 ...
+	3/2 5/3 2 5/2 3:8];
+  params{1}.ipem.rp.resonatorBank.peakFinder.ratioLabels = ...
+      { '1/16' '1/10' '1/8' '1/6' '1/5' '1/4' '1/3' '3/8' '2/5' '1/2' '3/5' '5/8' '2/3' '3/4' ...
+	'4/5' '5/6' '7/8' '1' '5/4' '4/3' '3/2' '5/3' '2' '5/2' '3' '4' '5' '6' '7' '8' };
+  
   
   if(CALC_RP)
     ipemOut = ipem_proc_series(flist,params{1}.ipem);
@@ -55,20 +62,23 @@ for rp_test_dir = rp_dir_list
     params{2}.plot.numResonTicks = 15;
     params{2}.plot.maxResonFreqPlot = 10;
     params{2}.plot.plotMeans = 1;
-    params{2}.plot.color = 0;
+    params{2}.plot.color = 1;
     params{2}.plot.separatePages = 1;
     params{2}.plot.savePlot = 1;
     params{2}.plot.showInput = 0;
-    params{2}.plot.timeLim = [0 8];
+    params{2}.plot.timeLim = [2 10];
     params{2}.plot.inputSigType = 'impulse';
     params{2}.plot.peakFinder.thresh = 0.25;
     params{2}.plot.peakFinder.thresh = 0;
     params{2}.plot.peakFinder.perform = {};
     params{2}.plot.peakFinder.minPeakHeight = 0.1;
+    params{2}.plot.peakFinder.errorTolerance = .15;
+    params{2}.plot.peakFinder.ratioVals = params{1}.ipem.rp.resonatorBank.peakFinder.ratioVals;
+    params{2}.plot.peakFinder.ratioLabels = params{1}.ipem.rp.resonatorBank.peakFinder.ratioLabels;
     params{2}.plot.peakFinder.perform = {};
     params{2}.plot.meanEnergy.numticks = 4;
     params{2}.plot.perform = {'resonEnergy','meanEnergy','stdEnergy','findPeaks','ratioProb'};
-    params{2}.plot.plotFname = 'rp_plots_beta_2_5.ps';
+    params{2}.plot.plotFname = 'metric_profiles.ps';
     plot_dir_rhythm_profile(flist,params{2});
   end
 

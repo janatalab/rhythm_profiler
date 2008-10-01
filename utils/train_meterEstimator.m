@@ -93,6 +93,8 @@ for iRun = 1:nRuns
   nnetTestInputs = nnet_inputs(:,~trainingMask);
   nnetTestClassTargets = classTargets(~trainingMask);
   
+  trainingMat(:,iRun) = trainingMask;
+  
   trainFileIdxs = idxs_used(trainIdxs);
   testFileIdxs = idxs_used(~trainingMask);
   
@@ -142,13 +144,16 @@ for iRun = 1:nRuns
   maskGivenCorrect = maskAnswered & ~maskMultiAnswer & (simOutput == nnetTestClassTargets);
   maskGivenIncorrect = maskAnswered & ~maskMultiAnswer & (simOutput ~= nnetTestClassTargets);
   numGivenCorrect = sum(maskGivenCorrect);
-  numAnswered = sum(maskAnswered & ~maskMultiAnswer);
+  numAnswered = sum(maskAnswered);
+  numMultiAnswer = sum(maskMultiAnswer);
   numTotal = length(nnetTestClassTargets);
   pctAnswered = numAnswered./numTotal.*100;
   pctCorrect = numGivenCorrect./numAnswered.*100;
+  pctMultiAnswer = numMultiAnswer./numAnswered.*100;
   
   pctAnsweredVec(iRun) = pctAnswered;
   pctCorrectVec(iRun) = pctCorrect;
+  pctMultiAnswerVec(iRun) = pctMultiAnswer;
   
   %keep a count of the versions that failed
   failToAnswerTally(testFileIdxs(~maskAnswered)) = failToAnswerTally(testFileIdxs(~maskAnswered)) + 1;
@@ -156,14 +161,6 @@ for iRun = 1:nRuns
       wrongAnswerTally(testFileIdxs(maskGivenIncorrect)) + 1;
   multiAnswerTally(testFileIdxs(maskMultiAnswer)) = ...
       multiAnswerTally(testFileIdxs(maskMultiAnswer)) + 1;
-  
-  
-  disp('failToAnswerTally:');
-  [find(failToAnswerTally) failToAnswerTally(failToAnswerTally ~=0)]
-  disp('wrongAnswerTally:');
-  [find(wrongAnswerTally) wrongAnswerTally(wrongAnswerTally ~= 0)]
-  disp('multiAnswertally:');
-  [find(multiAnswerTally) multiAnswerTally(multiAnswerTally ~= 0)]
   
   fprintf('\nAnswers given: %d of %d (%.1f %%)\n',numAnswered,numTotal,pctAnswered);
   if(pctAnswered < 100)
@@ -259,17 +256,28 @@ if(ismember('plotFailedTests',params.perform))
   
 end
   
+exemplarsUsedMask = zeros(size(matFileList));
+exemplarsUsedMask(idxs_used) = 1;
+
 exemplarTally = ensemble_init_data_struct;
-exemplarTally.vars = {'fname' 'failToAnswerTally' 'wrongAnswerTally'};
+exemplarTally.vars = {'fname' 'class' 'used' 'failToAnswerTally' 'wrongAnswerTally','trainingMat' };
 exemplarTallyCols = set_var_col_const(exemplarTally.vars);
 exemplarTally.data{exemplarTallyCols.fname} = matFileList;
+exemplarTally.data{exemplarTallyCols.class} = classes;
+exemplarTally.data{exemplarTallyCols.used} = exemplarsUsedMask;
 exemplarTally.data{exemplarTallyCols.wrongAnswerTally} = wrongAnswerTally;
 exemplarTally.data{exemplarTallyCols.failToAnswerTally} = failToAnswerTally;
+exemplarTally.data{exemplarTallyCols.class} = classes;
+exemplarTally.data{exemplarTallyCols.used} = exemplarsUsedMask;
+exemplarTally.data{exemplarTallyCols.trainingMat} = trainingMat;
 
 outData = ensemble_init_data_struct;
-outData.vars = {'mean_answer_provide','std_answer_provide',...
-		'mean_answer_correct','std_answer_correct','exemplarTally'};
+outData.vars = {'pctAnsweredPerTrial','pctCorrectPerTrial','pctMultiAnswerPerTrial','mean_answer_provide',...
+		'std_answer_provide','mean_answer_correct','std_answer_correct','exemplarTally'};
 outDataCols = set_var_col_const(outData.vars);
+outData.data{outDataCols.pctAnsweredPerTrial} = pctAnsweredVec';
+outData.data{outDataCols.pctCorrectPerTrial} = pctCorrectVec';
+outData.data{outDataCols.pctMultiAnswerPerTrial} = pctMultiAnswerVec';
 outData.data{outDataCols.mean_answer_provide} = mean(pctAnsweredVec);
 outData.data{outDataCols.std_answer_provide} = std(pctAnsweredVec);
 outData.data{outDataCols.mean_answer_correct} = mean(pctCorrectVec);

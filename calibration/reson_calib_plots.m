@@ -4,18 +4,19 @@
 warning off
 
 TEST_MODEL = 'reson_filterQSpacing_periodBasedDecay';
-%TEST_MODEL = 'reson_linearSpacing_constantBandwidth';
 %TEST_MODEL = 'comb';
 INPUT_TYPE = 'sine';
 GRAPHTYPE = 'magnitude_response';
-PLOT_BW = 1;
+PLOT_GAIN_CURVE = 1;
+PLOT_BW = 0;
 DBSCALE = 1;
 NORMALIZE = 0;
+RESON_FREQ_SCALE = 0;
 params = rp_paramGroups('param_group',TEST_MODEL,...
 	       'input_type','aud','gain_type','beta_distribution',...
 	       'perform_mulawCompression',0,...
 			'filt_type','filter');
-
+params.resonatorBank.resonType = 'reson';
 plot_dir = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/plots/btb';
 
 %for plotting only one particular reson.
@@ -25,7 +26,7 @@ plotFreqMagResp = 0;
 
 Fs = params.Fs;
 
-lengthSecs = 8;
+lengthSecs = 30;
 timeVector = 1/Fs:1/Fs:lengthSecs;
 params.resonatorBank.Fs = Fs;
 
@@ -34,7 +35,6 @@ switch(INPUT_TYPE)
   %feeding unit impulse
   inputSignal = [1 zeros(1,lengthSecs*Fs-1)];
   
-
  case 'impulse_train'
   freq = 2;
   inputSignal = zeros(1,lengthSecs*Fs);
@@ -59,8 +59,6 @@ rp = init_rp_struct('resonatorOut',outputSignal,'resonatorFreqs',resonFreqs);
 rpCols = set_var_col_const(rp.vars);
 rp.data{rpCols.Fs} = params.Fs;
 rp.data{rpCols.resonatorEnergy} = resonatorEnergy(rp,params.resonatorBank);
-
-
 
 switch(GRAPHTYPE)
   
@@ -130,7 +128,7 @@ switch(GRAPHTYPE)
     magResp = magResp(:,magRespIdx);
   end
   
-  
+  yMax = 0;
   for iReson = 1:size(magResp,2);
 
       
@@ -143,12 +141,15 @@ switch(GRAPHTYPE)
     if(DBSCALE)
       plot(F,logMagResp,'color',cmap(mod(iReson,numColors)+1,:));
     else
-      plot(F,thisMagResp(:,iReson),'color',cmap(mod(iReson,numColors)+1,:));
+      plot(F,thisMagResp,'color',cmap(mod(iReson,numColors)+1,:));
     end
 
     peakMag = max(thisMagResp);
     peakMagIdx = find(thisMagResp == peakMag);    
     actualFreq(iReson) = F(peakMagIdx);
+    
+    yMax = max(peakMag,yMax);
+    
     
     if(PLOT_BW)
       %find half-power points and plot them
@@ -161,18 +162,61 @@ switch(GRAPHTYPE)
     end
     
   end
-  %set(gca,'xlim',[0 max(actualFreq)+0.5]);
-  %set(gca,'ylim',[-25 0]);
+
+  if(DBSCALE)
+    logYMax = 20*log10(yMax);
+    set(gca,'ylim',[logYMax-40 logYMax+3]);
+  end
   
-  %set(gca,'xlim',[1 2]);
-  %set(gca,'ylim',[-6 -1]);
   
+
   
-  %set(gca,'ylim',[-60 5]);
+  set(gca,'xlim',[0 10.5]);
+  
   xlabel('Frequency (Hz)');
   ylabel('Magnitude Response (dB)');
-  %print(fullfile(plot_dir,'resonFiltBank_response_closeup.ps'),'-dpsc');
+
+ otherwise
+  figure;
+
+end
   
+if(PLOT_GAIN_CURVE)
+  betaFunc = resonatorBanks('betaDistribution');
+  gainParams =  params.resonatorBank.gainFunction;
+  gainParams.resonatorFreqs = resonFreqs;
+  gainVector = betaFunc(gainParams);
+  PLOT_BETA = 1;
+  RESON_FREQ_SCALE = 0;
+  if(PLOT_BETA)
+    plotFunc = 20*log10(gainVector.*2./(1-R.^2));    
+  else
+    plotFunc = 20*log10(1.*2./(1-R.^2));
+  end
+  if(RESON_FREQ_SCALE)
+    plot(plotFunc,'k');
+    tickLabels = num2str(resonFreqs','%.2f');
+    set(gca,'xtick',[1:10:99]);
+    set(gca,'xticklabel',tickLabels(1:10:99,:));
+  else
+    plot(resonFreqs,plotFunc,'k');
+  end
+
+  if(PLOT_BETA == 1)
+    titleStr = 'Reson gain shaped by beta function';
+  else
+    titleStr = 'Reson gain (unshaped)';
+  end
   
+  if(RESON_FREQ_SCALE)
+    titleStr = [titleStr ', freq scaled by reson spacing'];
+  else
+    titleStr = [titleStr ', freq linearly scaled'];
+  end
+  title(titleStr);
+  
+  xlabel('Frequency (Hz)');
+  ylabel('Magnitude Response (dB)');
+
 end
   

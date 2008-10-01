@@ -21,7 +21,7 @@ an{na}.params.variances = globals.input.variances;
 an{na}.params.varianceQuant = globals.input.varianceQuant;
 an{na}.params.exemplarsPerClass = globals.input.exemplarsPerClass;
 an{na}.params.classes = globals.input.classes;
-an{na}.params.plotPatterns = 0;
+an{na}.params.plotPatterns = 1;
 an{na}.params.savePath = globals.paths.dataPath;
 
 na=na+1;
@@ -30,9 +30,6 @@ an{na}.fun = @ipem_proc_series;
 an{na}.requires = {struct('name','gen_accent_impulses','vars','audFileList')};
 an{na}.params = globals.ipemProcParams;
 an{na}.params.plot.process = {'rp'};
-%an{na}.params.plot.rp.peakFinder.thresh = 0.25;
-%an{na}.params.plot.rp.peakFinder.perform = {};
-%an{na}.params.plot.rp.peakFinder.lpFreq  = 20;
 an{na}.params.plot.rp.peakFinder.ratioVals = an{na}.params.rp.resonatorBank.peakFinder.ratioVals;
 an{na}.params.plot.rp.peakFinder.ratioLabels = an{na}.params.rp.resonatorBank.peakFinder.ratioLabels;
 an{na}.params.plot.rp.freqLegend = 0;
@@ -48,12 +45,13 @@ an{na}.params.plot.rp.xminortick = 'off';
 an{na}.params.plot.rp.numResonTicks = 8;
 an{na}.params.plot.rp.meanEnergy.numticks = 4;
 an{na}.params.plot.rp.plotFname = 'meter_exemplar_plots';
+an{na}.params.plot.addInputFname = 1;
 
 na=na+1;
 an{na}.name = 'train_meterEstimator';
 an{na}.fun = @train_meterEstimator;
 an{na}.requires = {struct('name','ipem_proc_series'),struct('name','gen_accent_impulses')};
-an{na}.params.perform = {'plotFailedTests'};
+an{na}.params.perform = {}; %{'plotFailedTests'};
 an{na}.params.nnet.percentTrain = globals.nnet.percentTrain;
 an{na}.params.nnet.adaptFcn = globals.nnet.adaptFcn;
 an{na}.params.nnet.trainParams.epochs = globals.nnet.trainParams.epochs;
@@ -63,9 +61,15 @@ an{na}.params.ratioLabels = globals.ipemProcParams.rp.resonatorBank.peakFinder.r
 an{na}.params.plot = an{2}.params.plot.rp;
 an{na}.params.plot.plotFname = 'meter_exemplar_failed_tests';
 
-
+na=na+1;
+an{na}.name = 'plot_exemplarPeakRatioStats';
+an{na}.fun = @plot_exemplarPeakRatioStats;
+an{na}.requires = {struct('name','ipem_proc_series'),struct('name','gen_accent_impulses')};
+an{na}.params.ratioLabels = globals.ipemProcParams.rp.resonatorBank.peakFinder.ratioLabels;
+an{na}.params.plotPath = globals.plotExemplarRatios.plotPath;
+an{na}.params.plotFname = globals.plotExemplarRatios.plotFname;
 
 params = [];
-params.run_analyses = [3];
+params.run_analyses = [2];
 an = ensemble_jobman(an,params);
 return
