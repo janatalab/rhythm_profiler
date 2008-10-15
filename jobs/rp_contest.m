@@ -26,8 +26,8 @@ if(CALC_TEMPO_ESTIMATES)
   comparison_matrix = {};
   resampCorrection = [];
 
-  for dir_idx = 1:length(rp_dir_list)
-    
+  %for dir_idx = 1:length(rp_dir_list)
+   for dir_idx = 2:2 
     rp_test_dir = rp_dir_list{dir_idx};
     cd(rp_test_dir);
     fnames = dirrec('.',filetype);
@@ -48,15 +48,18 @@ if(CALC_TEMPO_ESTIMATES)
     params.ipem.ani.normalize_maxVal = 0.9;
     params.ipem.rp = rp_paramGroups('param_group',...
 				    'reson_filterQSpacing_periodBasedDecay',...
-				    'input_type','ani','gain_type','beta_distribution',...
+				    'input_type','ani','gain_type','prenorm_beta_distribution',...
 				    'perform_mulawCompression',0);
     
-    params.ipem.rp.resonatorBank.spacingFactor = 0.25;
+    params.ipem.rp.resonatorBank.spacingFactor = 0.5;
     %params.ipem.rp.resonatorBank.gainFunction.betaDistribution.flattenAt = 1.25;
+    %params.ipem.rp.resonatorBank.gainFunction.maxGain = 0.004;
+    %params.ipem.rp.resonatorBank.gainFunction.minGain = 0.001;
     params.peakFinder.thresh = 0.25;
     params.peakFinder.perform = {};
  
-    for fidx = 1:length(flist)
+    %for fidx = 1:length(flist)
+     for fidx = 562:562 
       disp(sprintf('Processing set %d, clip %d of %d',dir_idx,fidx,length(flist)));
       %retrieve the rp
       disp(sprintf('Retrieving RP for %s...',flist{fidx}));

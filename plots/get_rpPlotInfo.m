@@ -42,9 +42,14 @@ if(~isfield(params,'timeLim'))
   stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
   meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
 else
-  tempTimeV = [params.timeLim(1)*Fs:params.timeLim(2)*Fs]+1;%add one to allow
+  maxTime = size(thisRP.data{thisRPCols.resonatorOut}./Fs,3)./Fs - 1./Fs;
+  timeLim = min(params.timeLim,maxTime);
+  tempTimeV = [timeLim(1)*Fs:timeLim(2)*Fs]+1;%add one to allow
                                                %for starting at
-                                               %time t=0 
+                                               %time t=0
+					       
+
+					       
   stdEnergy = std(thisRP.data{thisRPCols.resonatorEnergy}(:,tempTimeV),[],2);
   meanEnergy =  mean(thisRP.data{thisRPCols.resonatorEnergy}(:, ...
 						  tempTimeV),2);

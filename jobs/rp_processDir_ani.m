@@ -66,7 +66,7 @@ for rp_test_dir = rp_dir_list
     params{2}.plot.separatePages = 1;
     params{2}.plot.savePlot = 1;
     params{2}.plot.showInput = 0;
-    params{2}.plot.timeLim = [2 10];
+    params{2}.plot.timeLim = [2 17];
     params{2}.plot.inputSigType = 'impulse';
     params{2}.plot.peakFinder.thresh = 0.25;
     params{2}.plot.peakFinder.thresh = 0;
@@ -78,7 +78,7 @@ for rp_test_dir = rp_dir_list
     params{2}.plot.peakFinder.perform = {};
     params{2}.plot.meanEnergy.numticks = 4;
     params{2}.plot.perform = {'resonEnergy','meanEnergy','stdEnergy','findPeaks','ratioProb'};
-    params{2}.plot.plotFname = 'metric_profiles.ps';
+    params{2}.plot.plotFname = 'metric_profiles_2-17s.ps';
     plot_dir_rhythm_profile(flist,params{2});
   end
 

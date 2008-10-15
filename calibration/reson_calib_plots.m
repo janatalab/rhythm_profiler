@@ -6,16 +6,20 @@ warning off
 TEST_MODEL = 'reson_filterQSpacing_periodBasedDecay';
 %TEST_MODEL = 'comb';
 INPUT_TYPE = 'sine';
-GRAPHTYPE = 'magnitude_response';
+GRAPHTYPE = '';%'magnitude_response';
 PLOT_GAIN_CURVE = 1;
 PLOT_BW = 0;
 DBSCALE = 1;
 NORMALIZE = 0;
-RESON_FREQ_SCALE = 0;
+RESON_FREQ_SCALE = 1;
 params = rp_paramGroups('param_group',TEST_MODEL,...
-	       'input_type','aud','gain_type','beta_distribution',...
+	       'input_type','aud','gain_type','prenorm_beta_distribution',...
 	       'perform_mulawCompression',0,...
 			'filt_type','filter');
+params.resonatorBank.gainFunction.maxGain = 1;
+params.resonatorBank.gainFunction.minGain = 0.25;
+params.resonatorBank.gainFunction.betaDistribution.alpha = 2;%1.5;
+params.resonatorBank.gainFunction.betaDistribution.beta = 5;%5.5;
 params.resonatorBank.resonType = 'reson';
 plot_dir = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/plots/btb';
 
@@ -53,7 +57,7 @@ switch(INPUT_TYPE)
 end
 
 rbankMethod = resonatorBanks(params.resonatorBank.method);
-[outputSignal,resonFreqs,BList,AList,QList] = rbankMethod(inputSignal,params.resonatorBank);
+[outputSignal,resonFreqs,BList,AList,QList,Rlist] = rbankMethod(inputSignal,params.resonatorBank);
 
 rp = init_rp_struct('resonatorOut',outputSignal,'resonatorFreqs',resonFreqs);
 rpCols = set_var_col_const(rp.vars);
@@ -187,11 +191,11 @@ if(PLOT_GAIN_CURVE)
   gainParams.resonatorFreqs = resonFreqs;
   gainVector = betaFunc(gainParams);
   PLOT_BETA = 1;
-  RESON_FREQ_SCALE = 0;
+  RESON_FREQ_SCALE = 1;
   if(PLOT_BETA)
-    plotFunc = 20*log10(gainVector.*2./(1-R.^2));    
+    plotFunc = 20*log10(gainVector);    
   else
-    plotFunc = 20*log10(1.*2./(1-R.^2));
+    plotFunc = 20*log10(1.*2./(1-Rlist.^2));
   end
   if(RESON_FREQ_SCALE)
     plot(plotFunc,'k');
@@ -203,7 +207,7 @@ if(PLOT_GAIN_CURVE)
   end
 
   if(PLOT_BETA == 1)
-    titleStr = 'Reson gain shaped by beta function';
+    titleStr = 'Reson gain normalized, then shaped by beta function';
   else
     titleStr = 'Reson gain (unshaped)';
   end
