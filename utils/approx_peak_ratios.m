@@ -1,5 +1,45 @@
 function approxRatios = approx_peak_ratios(varargin)
+% Approximates the peak frequency ratios relative to the highest peak.
+%
+% approxRatios = approx_peak_ratios(varargin)
+%
+% input arguments are tag/value pairs that can be passed in any
+% order.
 
+% peakFreqs: A vector of frequency values for each peak.
+% maxPeakFreq: The peakFreq that has the highest amplitude.
+% params: a parameter structure with the following fields.
+%              ratioVals: vector of ratio values to try and fit to the
+%                         peak frequency values.
+%            ratioLabels: cell array of ratio labels (as strings)
+%                         that are index matched to ratioVals. 
+%                maxMult: This parameter is only used if
+%                         params.relativeTo='minFreq'
+%                         The highest multiple used for approximation. Any
+%                         peaks that are at higher multiples will not be
+%                         assigned a value. 
+%         errorTolerance: error percentage within which to regard a
+%                         peak as fitting to a certain
+%                         ratio. e.g. .05 means that a frequency
+%                         value can be fit to a ratio or multiple
+%                         within a 5% error. If that frequency
+%                         value doesn't fit to any ratio within
+%                         that margin of error, it is regarded as
+%                         not falling within any of the given ratios.
+%             relativeTo: 'maxPeakFreq' or 'minFreq'.
+%                         if set to 'maxPeakFreq', then ratios will
+%                         be relative to params.maxPeakFreq.
+%                         If set to 'minFreq', ratios will be
+%                         relative to the smallest frequency value
+%                         in params.peakFreqs.
+%    
+%
+% Copyright (c) 2008 The Regents of the University of California
+% All Rights Reserved
+%
+% Author(s):
+% Stefan Tomic 9/08
+%
 
 for iarg = 1:2:nargin
 
@@ -56,9 +96,9 @@ switch(params.relativeTo)
     
   end
   
- case 'minPeakFreq'
+ case 'minFreq'
 
-  %express peakFreqs in relation to min peakFreq.
+  %express peakFreqs in relation to min frequency.
   peakFreqs = peakFreqs./min(peakFreqs);
   
   %we're going to try and find the

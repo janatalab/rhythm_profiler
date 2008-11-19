@@ -1,4 +1,4 @@
-function outData = train_meterEstimator(inData,params)
+function outData = plot_exemplarPeakRatioStats(inData,params)
 %
 %
 %
