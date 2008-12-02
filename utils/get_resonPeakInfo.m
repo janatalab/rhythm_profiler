@@ -32,11 +32,19 @@ if(isfield(params,'minPeakHeight'))
   peakHeights = peakHeights(goodPeakMask);
 end
 
-peakFreqs = resonFreqs(peakIdxs);
-maxPeakEnergyFreq = resonFreqs(find(meanEnergy == max(meanEnergy(peakIdxs)),1,'first'));
-normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;
-widths = get_rp_peakWidths('rpEnergy',meanEnergy,'peakFreqs',peakFreqs,'resonFreqs',resonFreqs);
-[approxRatios] = approx_peak_ratios('peakFreqs',peakFreqs,'maxPeakFreq',maxPeakEnergyFreq,'params',params);
+if(~isempty(peakIdxs))
+  peakFreqs = resonFreqs(peakIdxs);
+  maxPeakEnergyFreq = resonFreqs(find(meanEnergy == max(meanEnergy(peakIdxs)),1,'first'));
+  normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;
+  widths = get_rp_peakWidths('rpEnergy',meanEnergy,'peakFreqs',peakFreqs,'resonFreqs',resonFreqs);
+  [approxRatios] = approx_peak_ratios('peakFreqs',peakFreqs,'maxPeakFreq',maxPeakEnergyFreq,'params',params);
+else
+  peakFreqs = [];
+  normPeakFreqs = [];
+  widths = [];
+  peakHeights = [];
+  approxRatios = [];
+end
 
 outData = ensemble_init_data_struct;
 outData.name = 'rp_peak_info';
