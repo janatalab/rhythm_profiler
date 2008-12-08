@@ -1,8 +1,8 @@
-function outData = plot_ratioProb(ax,inData,params)
+function outData = plot_peakRatios(ax,inData,params)
 % Plots a bargraph that illustrates relative heights of peaks,
-% indicating probability of metric ratios present in input
+% expressed as frequency ratios relative to the highest peak
 %
-% outData = plot_findPeaks(ax,inData,params)
+% outData = plot_peakRatios(ax,inData,params)
 %
 % Description:
 %

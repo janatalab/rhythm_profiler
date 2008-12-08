@@ -158,7 +158,7 @@ if(ismember('resonEnergy',params.perform))
 			      'smallRectPlot_top');
   end
   
-  if(ismember('ratioProb',params.perform))
+  if(ismember('peakRatios',params.perform))
     params.fig.axLocs = union(params.fig.axLocs,'smallRectPlot_middle');
   end
   
@@ -181,9 +181,9 @@ if(ismember('resonEnergy',params.perform))
     plot_findPeaks(topAx,thisRP,params);
   end
 
-  if(ismember('ratioProb',params.perform))
+  if(ismember('peakRatios',params.perform))
     middleAx = get_axhandle(axHList,'smallRectPlot_middle');
-    plot_ratioProb(middleAx,thisRP,params);
+    plot_peakRatios(middleAx,thisRP,params);
   end
   
   if(ismember('showInput',params.perform) && (length(audArray) > ...
