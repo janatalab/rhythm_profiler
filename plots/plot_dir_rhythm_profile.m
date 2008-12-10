@@ -58,9 +58,21 @@ if(params.plot.savePlot  & exist(plotFile))
   
 end
   
+%support processing mat filenames in a cell array of strings, or
+%stored in an ensemble data struct
+if(iscell(inData) && ischar(inData{1}))
+  fList = inData;
+  nFiles = length(fList);
+elseif(isstruct(inData) && isfield(inData,'type'))
+  inDataCols = set_var_col_const(inData.vars);
+  paths = inData.data{inDataCols.path};
+  fnames = inData.data{inDataCols.filename};
+  for iFile = 1:length(fnames)
+    fList{iFile} = fullfile(paths{iFile},fnames{iFile});
+  end
+  nFiles = length(fList);
+end
 
-fList = inData;
-nFiles = length(fList);
 
 for iFile = 1:nFiles;
  

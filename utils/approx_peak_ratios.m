@@ -89,7 +89,7 @@ switch(params.relativeTo)
     if(errorPct <= errorTolerance)
       approxRatios{iPeakFreq,1} = labels{ratioIdx}; 
     else
-      warning(sprintf('Unable to approximate ratio. Value was %.3f',peakFreqs(iPeakFreq)));
+      fprintf('\napprox_peak_ratios: unable to approximate peak ratios. Value was %.3f\n\n',peakFreqs(iPeakFreq));
       approxRatios = {};
       return
     end

@@ -38,14 +38,12 @@ if(~iscell(inData))
 end
 
 %allows for accepting an rp as a string or as an rp data struct
-if(ischar(inData))
+if(ischar(inData{1}))
   rpload = load(inData{1});
   thisRP = rpload.rp;
 else
   thisRP = inData{1};
 end
-
-thisRP = inData{1};
 
 if(~isfield(params,'appendToPlot'))
   params.appendToPlot = 0;
@@ -80,6 +78,10 @@ if(~isfield(params,'bands') || ~isfield(params.bands,'climMode'))
   params.bands.climMode = 'scaledAcrossBands';
 end
 
+if(~isfield(params,'format'))
+  params.format = '-dpsc';
+end
+
 if(isempty(thisRP))
  
   clear fparams;
@@ -93,7 +95,7 @@ if(isempty(thisRP))
   
   if(isfield(params,'savePlot') & params.savePlot)
     disp(sprintf('Writing new plots to %s\n\n',fullfile(params.savePath,params.plotFname)));
-    print('-dpsc','-append',fullfile(params.savePath,params.plotFname));
+    print(params.format,'-append',fullfile(params.savePath,params.plotFname));
     close(fig1);
   end
   return
@@ -132,10 +134,10 @@ if(ismember('resonOutput',params.perform) && numBands == 1)
     [pth,fstub,ext] = fileparts(params.plotFname);
     if(params.separatePages)
       pfname = [fstub '_rOut' ext];
-      print('-dpsc',fullfile(params.savePath,pfname));
+      print(params.format,fullfile(params.savePath,pfname));
     else
       pfname = [fstub ext];
-      print('-dpsc','-append',fullfile(params.savePath,pfname));
+      print(params.format,'-append',fullfile(params.savePath,pfname));
     end
     disp(sprintf('Writing new plots to %s\n\n',fullfile(params.savePath,pfname)));      
     close(figH);
@@ -206,10 +208,10 @@ if(ismember('resonEnergy',params.perform))
     [pth,fstub,ext] = fileparts(params.plotFname);
     if(params.separatePages)
       pfname = [fstub '_rEnergy' ext];
-      print('-dpsc',fullfile(params.savePath,pfname));
+      print(params.format,fullfile(params.savePath,pfname));
     else
       pfname = [fstub ext];
-      print('-dpsc','-append',fullfile(params.savePath,pfname));
+      print(params.format,'-append',fullfile(params.savePath,pfname));
     end
     disp(sprintf('Writing new plots to %s\n\n',fullfile(params.savePath,pfname))); 
     close(figH);

@@ -34,12 +34,16 @@ mapped_audioFileList = check_stim_dirs(fnames,'srcroot',rp_proc_dir,'destroot',r
 params.ipem.ani  = ani_paramGroups;
 
 switch (ext)
- case '.wav'
+ case {'.wav','.mp3'}
   params.ipem.rp   = rp_paramGroups('param_group',...
 				    'reson_filterQSpacing_periodBasedDecay',...
 				    'input_type','ani','gain_type','beta_distribution',...
 				    'perform_mulawCompression',0);
   params.ipem.glob.process = {'ani','rp'};
+  %note that the peak ratio bargraph plot is disabled for audio
+  %files since the automated procedure for finding peak ratios was mainly
+  %tested and used with MIDI files. In order to use the peak ratio
+  %plotter, simply add 'peakRatios' to params.plot.perform.
   params.plot.perform = {'plotBands','plotBandEnergies', 'resonEnergy','meanEnergy','stdEnergy','findPeaks'};
   params.plot.inputSigType = 'wvf'; 
  
@@ -50,7 +54,7 @@ switch (ext)
 				    'perform_mulawCompression',0);
   params.ipem.glob.process = {'rp'};
 
-  params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','showInput'};
+  params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','peakRatios','showInput'};
   params.plot.inputSigType = 'impulse';
 end
 
@@ -82,6 +86,7 @@ params.plot.separatePages = 0;
 params.plot.savePlot = 1;
 params.plot.peakFinder.thresh = 0.25;
 params.plot.peakFinder.perform = {};
+params.plot.peakFinder.ratioLabels = params.ipem.rp.resonatorBank.peakFinder.ratioLabels;
 params.plot.meanEnergy.numticks = 4;
 params.plot.plotFname = 'btb.ps';
 
