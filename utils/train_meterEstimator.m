@@ -273,7 +273,7 @@ exemplarTally.data{exemplarTallyCols.trainingMat} = trainingMat;
 
 outData = ensemble_init_data_struct;
 outData.vars = {'pctAnsweredPerTrial','pctCorrectPerTrial','pctMultiAnswerPerTrial','mean_answer_provide',...
-		'std_answer_provide','mean_answer_correct','std_answer_correct','exemplarTally'};
+		'std_answer_provide','mean_answer_correct','std_answer_correct','exemplarTally','net'};
 outDataCols = set_var_col_const(outData.vars);
 outData.data{outDataCols.pctAnsweredPerTrial} = pctAnsweredVec';
 outData.data{outDataCols.pctCorrectPerTrial} = pctCorrectVec';
@@ -283,6 +283,7 @@ outData.data{outDataCols.std_answer_provide} = std(pctAnsweredVec);
 outData.data{outDataCols.mean_answer_correct} = mean(pctCorrectVec);
 outData.data{outDataCols.std_answer_correct} = std(pctCorrectVec);
 outData.data{outDataCols.exemplarTally} = exemplarTally;
+outData.data{outDataCols.net} = net;
 
 return
 
