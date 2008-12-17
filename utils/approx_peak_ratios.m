@@ -1,4 +1,4 @@
-function approxRatios = approx_peak_ratios(varargin)
+function [approxRatios,ratioBinIdx,errorVec] = approx_peak_ratios(varargin)
 % Approximates the peak frequency ratios relative to the highest peak.
 %
 % approxRatios = approx_peak_ratios(varargin)
@@ -72,6 +72,12 @@ catch
   params.relativeTo = 'maxPeakFreq';
 end
 
+try
+  doReport = params.doReport;
+catch
+  doReport = 1;
+end
+
 switch(params.relativeTo)
   
  case 'maxPeakFreq'
@@ -88,10 +94,14 @@ switch(params.relativeTo)
     errorVec(iPeakFreq) = errorPct;
     if(errorPct <= errorTolerance)
       approxRatios{iPeakFreq,1} = labels{ratioIdx}; 
+      ratioBinIdx(iPeakFreq,1) = ratioIdx;
     else
-      fprintf('\napprox_peak_ratios: unable to approximate peak ratios. Value was %.3f\n\n',peakFreqs(iPeakFreq));
-      approxRatios = {};
-      return
+      approxRatios{iPeakFreq,1} = 'N/A';
+      ratioBinIdx(iPeakFreq,1) = NaN;
+      
+      if(doReport)
+	fprintf('\napprox_peak_ratios: unable to approximate peak ratios. Value was %.3f\n\n',peakFreqs(iPeakFreq));
+      end
     end
     
   end

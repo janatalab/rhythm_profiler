@@ -260,9 +260,15 @@ if(ismember('plotBandEnergies',params.perform))
   params.plotRPBandSigs.plotSig = 'resonatorBandEnergy';
   plot_rpBandSigs(thisRP,params);
 
-
-
 end
+
+if(ismember('entropy',params.perform))
+    
+  plot_rpEntropy(thisRP,params);
+  
+end
+
+
 return
 
 

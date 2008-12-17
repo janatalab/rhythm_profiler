@@ -87,7 +87,7 @@ for iFile = 1:nFiles;
   clear inputPlotData;
   clear audStruct;
 
-  switch(ext)
+  switch lower(ext)
    case {'.wav','.mat'}
 
     if(isfield(params,'srcMatVarName'))

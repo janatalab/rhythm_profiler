@@ -34,7 +34,7 @@ rp = inData;
 rpCols = set_var_col_const(rp.vars);
 peakInfo = rp.data{rpCols.peakInfo};
 peakInfoCols = set_var_col_const(peakInfo.vars);
-ratios = peakInfo.data{peakInfoCols.approxRatios};
+ratios = peakInfo.data{peakInfoCols.approxRatio};
 heights = peakInfo.data{peakInfoCols.normHeight};
 
 vals = zeros(1,numVals);

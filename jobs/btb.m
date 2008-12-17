@@ -33,7 +33,7 @@ mapped_audioFileList = check_stim_dirs(fnames,'srcroot',rp_proc_dir,'destroot',r
 
 params.ipem.ani  = ani_paramGroups;
 
-switch (ext)
+switch lower(ext)
  case {'.wav','.mp3'}
   params.ipem.rp   = rp_paramGroups('param_group',...
 				    'reson_filterQSpacing_periodBasedDecay',...

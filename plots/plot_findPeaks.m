@@ -36,11 +36,11 @@ get_rpPlotInfo;
 
 peakInfo = thisRP.data{thisRPCols.peakInfo};
 peakInfoCols = set_var_col_const(peakInfo.vars);
-peakFreqs = peakInfo.data{peakInfoCols.peak};
-normPeakFreqs = peakInfo.data{peakInfoCols.norm};
+peakFreqs = peakInfo.data{peakInfoCols.peakFreq};
+normPeakFreqs = peakInfo.data{peakInfoCols.normPeakFreq};
 widths = peakInfo.data{peakInfoCols.width};
 heights = peakInfo.data{peakInfoCols.normHeight};
-approxRatios = peakInfo.data{peakInfoCols.approxRatios};
+approxRatios = peakInfo.data{peakInfoCols.approxRatio};
 
 
 peakFindHeader = sprintf('Peak   Norm   Width   normHeight   Ratio\n');
