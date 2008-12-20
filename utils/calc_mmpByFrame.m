@@ -52,7 +52,7 @@ for iFrame = 1:nFrames
   binSuccessHeights = peakInfo.normHeight(~isnan(peakInfo.ratioBinIdx));
   
   ratioBinsByFrame(idxsBinSuccesses,iFrame) = binSuccessHeights;
-  ratioEntropyByFrame(iFrame) = sig_entropy(ratioBinsByFrame(:,iFrame));
+  ratioEntropyByFrame(iFrame) = sigEntropy(ratioBinsByFrame(:,iFrame));
 
   
   heightRatios = peakInfo.normHeight./max(peakInfo.normHeight);

@@ -134,7 +134,7 @@ for iBand = 1:nBands
   
   set(ax,'XtickLabel',sprintf('%d|',timeTick));
   set(ax,'YtickLabel',sprintf('%.1f|',resonFreqs(resonFreqTick)));
-  
+  set(ax,'tickdir','out');
   if(mod(iBand,5) == 0 || iBand == nBands)
     if(isfield(params,'savePlot') & params.savePlot)
         [pth,fstub,ext] = fileparts(params.plotFname);

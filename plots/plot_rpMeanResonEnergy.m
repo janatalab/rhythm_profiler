@@ -59,8 +59,9 @@ end
 plot(meanEnergy,'k');
 set(ax,'ylim',ylim);
 set(ax,'xlim',[freqMin freqMax]);
-set(ax,'xtick',[]);
-set(ax,'ytick',[]);
+
+set(ax,'Xtick',resonFreqTick);
+set(ax,'XtickLabel',[]);
 camorbit(ax,90,0);
 ytick = [ylim(1):(ylim(2)-ylim(1))/(params.meanEnergy.numticks-1):ylim(2)]';
 

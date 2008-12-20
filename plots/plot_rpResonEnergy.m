@@ -55,6 +55,7 @@ set(ax,'Xtick',timeTick);
 set(ax,'Ytick',resonFreqTick);
 set(ax,'YtickLabel',resonFreqLabel);
 set(ax,'YLim',[freqMin freqMax]);
+set(ax,'tickdir','out');
 if(isfield(params,'timeLim'))
   set(ax,'Xlim',params.timeLim);
 end

@@ -70,6 +70,6 @@ an{na}.params.plotPath = globals.plotExemplarRatios.plotPath;
 an{na}.params.plotFname = globals.plotExemplarRatios.plotFname;
 
 params = [];
-params.run_analyses = [2];
+params.run_analyses = [3];
 an = ensemble_jobman(an,params);
 return
