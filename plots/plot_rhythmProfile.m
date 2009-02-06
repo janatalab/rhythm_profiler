@@ -49,7 +49,8 @@ if(~isfield(params,'appendToPlot'))
   params.appendToPlot = 0;
 end
 
-if(exist(fullfile(params.savePath,params.plotFname),'file') && ~params.appendToPlot)
+if(isfield(params,'savePlot') && params.savePlot && ...
+   exist(fullfile(params.savePath,params.plotFname),'file') && ~params.appendToPlot)
   confirm_overwrite = input(['File ' fullfile(params.savePath,params.plotFname) '  exists. Overwrite (y/n)?'],'s');
   if(ismember(confirm_overwrite,{'Y','y'}))
     delete(fullfile(params.savePath,params.plotFname));
@@ -268,6 +269,7 @@ if(ismember('entropy',params.perform))
   
 end
 
+outData = axHList;
 
 return
 

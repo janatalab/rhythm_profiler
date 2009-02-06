@@ -70,7 +70,7 @@ for iRP = 1:nRP
   
   if(ismember('signedKLDivByFrame',params.perform))
     %%% kl divergence analysis %%%
-  cra
+  
     fprintf('process ''signedKLDivByFrame'' was specified.\n');
     fprintf(['Calculating KL Divergence by frame and signing results by' ...
 	     ' relative entropy to the mean entropy']);

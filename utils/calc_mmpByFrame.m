@@ -16,7 +16,7 @@ Fs = params.Fs;
 frameSizeSamps = params.mmpByFrame.frameSize*Fs;
 hopSizeSamps = params.mmpByFrame.hopSize*Fs;
 nSamps = size(resonEnergy,2);
-nFrames = floor((nSamps - frameSizeSamps)/hopSizeSamps);
+nFrames = floor((nSamps - frameSizeSamps - 1)/hopSizeSamps);
 ratioEntropyByFrame = nan(nFrames,1);
 
 fprintf(fid,'Calculating mean metric profiles by frame...\n');
@@ -46,7 +46,6 @@ for iFrame = 1:nFrames
   params.resonatorBank.peakFinder.doReport = 0;
   peakInfo = get_resonPeakInfo(mmpByFrame(:,iFrame),resonFreqs,params.resonatorBank.peakFinder);
   
-
   %use only peaks that successfully binned  
   idxsBinSuccesses = peakInfo.ratioBinIdx(~isnan(peakInfo.ratioBinIdx));
   binSuccessHeights = peakInfo.normHeight(~isnan(peakInfo.ratioBinIdx));
