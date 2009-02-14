@@ -43,6 +43,7 @@ else
   peakHeights = [];
   approxRatios = [];
   errorVec = [];
+  ratioBinIdx = [];
 end
 
 outData.peakFreq = peakFreqs;
