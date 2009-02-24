@@ -4,6 +4,12 @@ function outData = plot_meanResonEnergy(inData,params)
 %
 %
 
+try
+  plotStyle = params.plotStyle;
+catch
+  plotStyle = 'line';
+end
+
 rpData = inData;
 rpCols = set_var_col_const(rpData.vars);
 ax = params.ax;
@@ -23,15 +29,22 @@ for iPlot = 1:numPlots
   end
   
   if(isfield(params,'plotStd') && params.plotStd(iPlot)) 
-    errorbar(ax,meanEnergy,stdEnergy,lspec,'lineWidth',.5);
+    switch(plotStyle)
+     case 'line'      
+      errorbar(ax,meanEnergy,stdEnergy,lspec,'lineWidth',.5);
+     case 'fill'
+      axes(ax);
+      jbfill([1:length(meanEnergy)],meanEnergy'+stdEnergy',...
+	     meanEnergy'-stdEnergy',lspec,'k',1,0.5);
+    end
   else
-    plot(ax,meanEnergy,lspec,'lineWidth',.5);
+    plot(ax,meanEnergy,'color',lspec,'lineWidth',.5);
   end
-  set(ax,'xlim',[1 length(meanEnergy)]);
+    
   hold(ax,'on');
 end
 
-
+set(ax,'xlim',[1 length(meanEnergy)]);
 
 if(isfield(params,'ylim'))
   set(ax,'ylim',params.ylim);
