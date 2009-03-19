@@ -45,7 +45,7 @@ end
 try
   xVals;
 catch
-  xVals = 1:length(signal);
+  xVals = 1:length(sig);
 end
 
 if(~exist('params','var') || ~isfield(params,'runMode'))
@@ -56,9 +56,10 @@ if(~isfield(params,'interpolate'))
   params.interpolate = 0;
 end
 
-%if(size(sig,1) > size(sig,2))
-%  sig = sig';
-%end
+%if this is a row vector, make it a column vector
+if(size(sig,2) > size(sig,1))
+  sig = sig';
+end
 
 diffSig = [0 ; diff(sig)];
 

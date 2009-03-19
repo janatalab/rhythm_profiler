@@ -1,9 +1,19 @@
 function [mmpByFrame,stdmpByFrame,ratioBinsByFrame,ratioEntropyByFrame,ratioTally] = calc_mmpByFrame(resonEnergy,resonFreqs,params)
+% calculates a mean metric profile (MMP) on a frame-by-frame basis
 %
+% [mmpByFrame,stdmpByFrame,ratioBinsByFrame,ratioEntropyByFrame,ratioTally] = calc_mmpByFrame(resonEnergy,resonFreqs,params)function outData = rp_findResonPhases(inData,params)
+%
+%  INPUT
 % 
 %
+%  OUTPUT
 %
+% Copyright (c) 2009 The Regents of the University of California
+% All Rights Reserved 
 %
+% Author:
+% Jan, 2009 - Stefan Tomic 
+
 
 try
   fid = params.logFileFid;
