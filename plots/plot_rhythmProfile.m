@@ -168,7 +168,7 @@ if(ismember('resonEnergy',params.perform))
   if(ismember('showInput',params.perform))
     params.fig.axLocs = union(params.fig.axLocs,'smallBox_bottom');
   end
-  
+
   [figH,axHList] = rp_figure(params.fig);
   bottomAx = get_axhandle(axHList,'rectPlot_bottom');
  
@@ -266,6 +266,41 @@ end
 if(ismember('entropy',params.perform))
     
   plot_rpEntropy(thisRP,params);
+  
+end
+
+if(ismember('onsetExpectation',params.perform))
+  params.fig.axLocs = union(params.fig.axLocs,'squarePlot_top');
+  params.fig.axLocs = union(params.fig.axLocs,'infoBox_top');
+  [figH,axHList] = rp_figure(params.fig);
+  topAx = get_axhandle(axHList,'squarePlot_top');
+  infoAx = get_axhandle(axHList,'infoBox_top');
+  
+  expectData = thisRP.data{thisRPCols.expectationError};
+  expectData = ensemble_datastruct2tree(expectData);
+  radiusLim = 0.3;
+  %polar(topAx,pi/5,radiusLim,'w');
+  %hold on;
+  polar(topAx,expectData.thetaDistPlotInfo,expectData.radDistPlotInfo);
+
+  axes(infoAx);
+  text(.05,.7,sprintf('Entropy: %.3f',expectData.distEntropy));
+  text(.05,.5,sprintf('Mean Angle: %.2f',angle(expectData.distMean)));
+  text(.05,.3,sprintf('Mean Strength: %.2f',abs(expectData.distMean)));
+  
+  if(isfield(params,'savePlot') & params.savePlot)
+    [pth,fstub,ext] = fileparts(params.plotFname);
+    if(params.separatePages)
+      pfname = [fstub '_onsetExpectation' ext];
+      print(params.format,fullfile(params.savePath,pfname));
+    else
+      pfname = [fstub ext];
+      print(params.format,'-append',fullfile(params.savePath,pfname));
+    end
+    disp(sprintf('Writing new plots to %s\n\n',fullfile(params.savePath,pfname))); 
+    close(figH);
+  end
+  
   
 end
 

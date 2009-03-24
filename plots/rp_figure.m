@@ -132,6 +132,12 @@ if(ismember('smallBox_bottom',params.axLocs))
   set(ax_h(end),'xtick',[],'ytick',[]);
 end
 
+if(ismember('squarePlot_top',params.axLocs))
+  ax_h(end+1) = axes('position',[leftMargin bottomMargin+spacer*3 rectPlotWidth rectPlotWidth]);
+  axis square;
+  set(ax_h(end),'tag','squarePlot_top');
+end
+
 if(ismember('movie_img',params.axLocs))
   ax_h(end+1) = axes('position',[0 0 1 1]);
   set(ax_h(end),'tag','movie_img');

@@ -1,4 +1,4 @@
-function onsetExpectMtx = rp_removeCurrent(varargin);
+function onsetExpectMtx = rp_predictCurrentOutput(varargin);
 % removes the effects of current onsets on the resonator Outputs
 %
 %

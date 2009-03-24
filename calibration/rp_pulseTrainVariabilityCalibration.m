@@ -4,6 +4,8 @@ globals = rhythmTap_globals;
 
 filtType = 'reson';
 
+PLOT_PERIODICITY_SURF = 1;
+
 
 %if this is set to 1, barFreq will be used rather than pulseFreq
 %bar freq determines the frequency of pulses based on the length of
@@ -11,7 +13,7 @@ filtType = 'reson';
 USEBARFREQ = 1;
 
 pulseFreq = 6; %pulse frequency in Hz.
-barFreq = .5;
+barFreq = 1;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -29,7 +31,7 @@ elseif(strcmp(filtType,'reson'))
 end
 
 dur = 30.01;
-Fs = 300;
+Fs = 100;
 
 %theoretical predictions of note counts for places on a bar
 %for different meters (3/4, 4/4, and 6/8). If you want all notes to
@@ -46,17 +48,19 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 
 
 %standard deviations in ms
-%stdDevsMs = [0 20 40 80];
-stdDevsMs = 0;
+stdDevsMs = [0 20 40 60 80];
+%stdDevsMs = 0;
 
 
-metricLabels = {'meter = 3/4','meter = 4/4','meter = 6/8','alternate23'};
-
-accentPatterns = {[1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
+%metricLabels = {'meter = 3/4','meter = 4/4','meter = 6/8','alternate23'};
+metricLabels = {''};
+accentPatterns = {[1]};
+ %{ 
+ [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
 		   [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
 		   [1  0 .33  0 .33  0 .66   0  .33  0 .33  0],...
 		   [1  .66 1  .66  .66  ] };
-
+%}
 
 for istd = 1:length(stdDevsMs)
   for iaccent = 1:length(accentPatterns)
@@ -89,13 +93,13 @@ for istd = 1:length(stdDevsMs)
     onsetTimesSamps(2:end) = onsetTimesSamps(2:end) + onsetDevsSamps;
     onsetTimesSamps(find(onsetTimesSamps > sigLen)) = [];
     
-
+    numOnsets = length(onsetTimesSamps);
     accentIndices = mod([0:numOnsets-1],accentStructLen)+1;
     sig(onsetTimesSamps) = accentStruct(accentIndices);
     
 
     %CONVOLVING WITH GAUSSIAN
-    sig = conv(sig,gaussian);
+    %sig = conv(sig,gaussian);
     
     aud_st = init_aud('Fs',Fs,'nchan',1,'wvf',sig);
     
@@ -110,8 +114,10 @@ for istd = 1:length(stdDevsMs)
     ipemOutCols = set_var_col_const(ipemOut.vars);
     rp = ipemOut.data{ipemOutCols.rp};
     
-    params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
-		    'findPeaks','ratioProb','showInput'}; %'resonOutput',
+    %params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
+    %	    'findPeaks','ratioProb','showInput'};
+    %	    %'resonOutput',
+    params{2}.perform = {'onsetExpectation'};
     params{2}.freqLegend = 1;
     params{2}.legendParams.minHz = 1;
     params{2}.legendParams.maxHz = 5;
@@ -124,7 +130,7 @@ for istd = 1:length(stdDevsMs)
     params{2}.inputSigType = 'wvf';
     params{2}.plotMeans = 1;
     params{2}.color = 0;
-    params{2}.savePlot = 0;
+    params{2}.savePlot = 1;
     params{2}.separatePages = 1;
     params{2}.peakFinder.thresh = 0;
     params{2}.peakFinder.perform = {};
@@ -155,7 +161,9 @@ for istd = 1:length(stdDevsMs)
     inData{1} = rp{1};
     inData{2} = aud_st;
     
-    plot_rhythmProfile(inData,params{2});
+    if(PLOT_PERIODICITY_SURF)
+      plot_rhythmProfile(inData,params{2});
+    end
     
   end
 end
