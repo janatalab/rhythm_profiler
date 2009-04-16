@@ -58,7 +58,18 @@ else
     params.peakFinder = struct();
     params.peakFinder.minPeakHeight = 0.1;
   end
-  thisRP.data{thisRPCols.peakInfo} = get_resonPeakInfo(thisRP,params.peakFinder);
+  
+  peakInfo = get_resonPeakInfo(thisRP.data{thisRPCols.meanResonatorEnergy},...
+		    resonFreqs,params.peakFinder);
+  peakInfo = ensemble_tree2datastruct(peakInfo);
+  %temporary solution until ensemble_tree2datastruct is fixed
+  if(iscell(peakInfo.data{1}))
+    for iTmp = 1:length(peakInfo.data)
+      peakInfo.data{iTmp} = peakInfo.data{iTmp}{1};
+    end
+  end
+  
+  thisRP.data{thisRPCols.peakInfo} = peakInfo;
   
 end
 

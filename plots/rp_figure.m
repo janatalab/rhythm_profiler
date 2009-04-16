@@ -46,9 +46,10 @@ else
   rectPlotHeight = params.rectPlotHeight;
 end
 
+squarePlotDim = 0.5;
 leftMargin = 0.1;
 rightMargin = 0.1;
-bottomMargin = 0.08;
+bottomMargin = 0.05;
 spacer = 0.03;
 
 topMargin = 0.08;
@@ -82,13 +83,6 @@ if(~isfield(params,'aspect'))
   params.aspect = 'rectangle';
 end
   
-if(ismember('squarePlot_bottom',params.axLocs))
-  dims = [leftMargin bottomMargin rectPlotWidth rectPlotWidth];
-  ax_h(end+1) = axes('position',dims);
-  axis square
-  set(ax_h(end),'tag','squarePlot_bottom');
-end
-    
 if(ismember('rectPlot_top',params.axLocs))
   ax_h(end+1) = axes('position',[leftMargin middle rectPlotWidth rectPlotHeight]);
   set(ax_h(end),'tag','rectPlot_top');
@@ -120,6 +114,18 @@ if(ismember('infoBox_top',params.axLocs))
   set(ax_h(end),'visible','off');
 end
 
+if(ismember('smallLegend_topRight',params.axLocs))
+  ax_h(end+1) = axes('position',[0.8 0.87 0.15 0.05]);
+  set(ax_h(end),'tag','smallLegend_topRight');
+  set(ax_h(end),'visible','off');
+end
+
+if(ismember('smallLegend_bottomRight',params.axLocs))
+  ax_h(end+1) = axes('position',[0.8 (bottomMargin+squarePlotDim-0.1) 0.15 0.05]);
+  set(ax_h(end),'tag','smallLegend_bottomRight');
+  set(ax_h(end),'visible','off');
+end
+
 if(ismember('smallBox_top',params.axLocs))
   ax_h(end+1) = axes('position',[leftMargin middle+rectPlotHeight rectPlotWidth 0.1]);
   set(ax_h(end),'tag','smallBox_top');
@@ -133,11 +139,18 @@ if(ismember('smallBox_bottom',params.axLocs))
 end
 
 if(ismember('squarePlot_top',params.axLocs))
-  ax_h(end+1) = axes('position',[leftMargin bottomMargin+spacer*3 rectPlotWidth rectPlotWidth]);
+  ax_h(end+1) = axes('position',[ (1-squarePlotDim)/2 middle squarePlotDim squarePlotDim]);
   axis square;
   set(ax_h(end),'tag','squarePlot_top');
 end
 
+if(ismember('squarePlot_bottom',params.axLocs))
+  dims = [ (1-squarePlotDim)/2 bottomMargin squarePlotDim squarePlotDim];
+  ax_h(end+1) = axes('position',dims);
+  axis square
+  set(ax_h(end),'tag','squarePlot_bottom');
+end
+    
 if(ismember('movie_img',params.axLocs))
   ax_h(end+1) = axes('position',[0 0 1 1]);
   set(ax_h(end),'tag','movie_img');

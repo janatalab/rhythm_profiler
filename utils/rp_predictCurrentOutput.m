@@ -1,4 +1,4 @@
-function onsetExpectMtx = rp_predictCurrentOutput(varargin);
+function onsetExpectMtx = rp_predictCurrentOutput(varargin)
 % removes the effects of current onsets on the resonator Outputs
 %
 %
@@ -40,13 +40,20 @@ fid =1;
 
 fprintf(fid,['\nCalculating reson filter predictor, assuming on no' ...
 	     ' future input. Onset # ']);
+
+%figure(2);
+compAxH = axes;
+axis square;set(gca,'visible','off');
+labelAxH = axes('position',[0 .9 .1 .1],'visible','off');
+
 for iOnset = 1:nOnsets
     
   if(mod(iOnset-1,10) == 0)
     fprintf(fid,' %d ',iOnset);
   end
-	
-  resonBankOutNoOnset = resonBankOut(:,[1:onsetTimesSamps(iOnset)-1]);
+
+  leftOnsetBorder = onsetBorders(iOnset*2-1);  
+  resonBankOutNoOnset = resonBankOut(:,[1:leftOnsetBorder-1]);
   
   if(isempty(resonBankOutNoOnset))
     expectValue = 0;
@@ -68,9 +75,18 @@ for iOnset = 1:nOnsets
     x0 = 0;
     x2 = 0;
       
-    y1List = resonBankOutNoOnset(:,onsetTimesSamps(iOnset)-1);
-    y2List = resonBankOutNoOnset(:,onsetTimesSamps(iOnset)-2);
-      
+    y1List = resonBankOutNoOnset(:,leftOnsetBorder-1);
+    
+    if(onsetTimesSamps(iOnset) > 2)
+      y2List = resonBankOutNoOnset(:,leftOnsetBorder-2);
+    else
+      y2List = zeros(size(resonBankOut,1),1);
+    end
+    
+    %hilbertResonBankOut = hilbert(resonBankOut')';
+    %y1ListHil = hilbertResonBankOut(:,onsetTimesSamps(iOnset)-15);
+    %y2ListHil = hilbertResonBankOut(:,onsetTimesSamps(iOnset)-16);
+       
     switch(params.resonType)
      case 'reson_z'
       
@@ -79,25 +95,44 @@ for iOnset = 1:nOnsets
       %approximates the current phase.
       nSamples = round(params.predictSec .* Fs);
       expectValue = [];
+      expectValueHil = [];
   
       for iSample = 1:nSamples
 	
 	expectValue(:,iSample) = (-a1List.*y1List -a2List.*y2List)./a0List;
-
+	%expectValueHil(:,iSample) = (-a1List.*y1ListHil -a2List.*y2ListHil)./a0List;
+	
 	y2List = y1List;
 	y1List = expectValue(:,iSample);
+	
+	%y2ListHil = y1ListHil;
+	%y1ListHil = expectValueHil(:,iSample);
 	
       end
       
       expectSeries = [resonBankOutNoOnset expectValue];
-	
+      %expectSeriesHil = [hilbertResonBankOut(:,1:onsetTimesSamps(iOnset)-15) ...
+%			 expectValueHil];
+					     
       hilbertExpectSeries = hilbert(expectSeries')';
       onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,onsetTimesSamps(iOnset));
-		
+      %onsetExpectMtx(:,iOnset) = expectSeriesHil(:,onsetTimesSamps(iOnset));
+      %{
+      if(iOnset >= 55)
+	figure(2);compass(compAxH,hilbertExpectSeries(:,onsetTimesSamps(iOnset)));
+	hold on;
+	compass(compAxH,sum(hilbertExpectSeries(:,onsetTimesSamps(iOnset))),'r');
+	axes(labelAxH);
+	cla;
+	text(.1,.8,['onset # ' num2str(iOnset)]);
+	text(.1,.4,['samp # ' num2str(onsetTimesSamps(iOnset))]);
+	hold off;
+      end
+      %}
     end
   end
 
-end
+end % for iOnset
 
 
 fprintf(fid,'\n');

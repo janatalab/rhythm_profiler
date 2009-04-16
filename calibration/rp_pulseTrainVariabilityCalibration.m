@@ -13,7 +13,7 @@ PLOT_PERIODICITY_SURF = 1;
 USEBARFREQ = 1;
 
 pulseFreq = 6; %pulse frequency in Hz.
-barFreq = 1;
+barFreq = .25;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -40,27 +40,25 @@ noteOccurrence = {[4 0 2 0 3 0 2 0 3 0 2 0],...
 		  [5 0 2 0 3 0 2 0 4 0 2 0 3 0 2 0],...
 		  [4 0 2 0 2 0 3 0 2 0 2 0]};
 
-
 gaussFWHMms = 50;
 gaussFWHMsamps = floor(gaussFWHMms/1000*Fs);
 
 gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 
-
 %standard deviations in ms
-stdDevsMs = [0 20 40 60 80];
+%stdDevsMs = [0 20 40 60 80];
+stdDevsMs = [0];
 %stdDevsMs = 0;
 
+metricLabels = {'meter = 3/4','meter = 4/4','meter = 6/8','alternate23'};
+%metricLabels = {'hpbwReson_8thpower_morefilts'};
+%accentPatterns = {[1]};
 
-%metricLabels = {'meter = 3/4','meter = 4/4','meter = 6/8','alternate23'};
-metricLabels = {''};
-accentPatterns = {[1]};
- %{ 
- [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
+accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
 		   [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
 		   [1  0 .33  0 .33  0 .66   0  .33  0 .33  0],...
-		   [1  .66 1  .66  .66  ] };
-%}
+		   [1 .66 1  .66  .66  ] };
+
 
 for istd = 1:length(stdDevsMs)
   for iaccent = 1:length(accentPatterns)
@@ -109,6 +107,9 @@ for istd = 1:length(stdDevsMs)
     params{1}.ipem.rp.resonatorBank.peakFinder.thresh = 0;
     params{1}.ipem.rp.resonatorBank.peakFinder.perform = {};
     params{1}.ipem.rp.resonatorBank.peakFinder.minPeakHeight = 0.1;
+    %params{1}.ipem.rp.resonatorBank.resonFreqSpacing = 'linear';
+    %params{1}.ipem.rp.resonatorBank.spacingHz = .1;
+    %params{1}.ipem.rp.resonatorBank.spacingFactor =0.25;
     
     ipemOut = ipem_proc_series(aud_st,params{1}.ipem);
     ipemOutCols = set_var_col_const(ipemOut.vars);
@@ -117,7 +118,8 @@ for istd = 1:length(stdDevsMs)
     %params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
     %	    'findPeaks','ratioProb','showInput'};
     %	    %'resonOutput',
-    params{2}.perform = {'onsetExpectation'};
+    params{2}.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy', ...
+    	    'findPeaks','showInput','expectProbByOnset'};
     params{2}.freqLegend = 1;
     params{2}.legendParams.minHz = 1;
     params{2}.legendParams.maxHz = 5;
@@ -131,7 +133,7 @@ for istd = 1:length(stdDevsMs)
     params{2}.plotMeans = 1;
     params{2}.color = 0;
     params{2}.savePlot = 1;
-    params{2}.separatePages = 1;
+    params{2}.separatePages = 0;
     params{2}.peakFinder.thresh = 0;
     params{2}.peakFinder.perform = {};
     params{2}.peakFinder.minPeakHeight = 0;
@@ -142,6 +144,11 @@ for istd = 1:length(stdDevsMs)
     params{2}.meanEnergy.numticks = 4;
     params{2}.meanEnergy.yTickLabelFmt = '%.3f';
     
+    actualStructLen = length(find(accentStruct > 0));
+    startOnsetToPlot = actualStructLen*2+1;
+    endOnsetToPlot = startOnsetToPlot+actualStructLen-1;
+    params{2}.expectProbByOnset.onsetsToPlot = [startOnsetToPlot:endOnsetToPlot];
+     
     if(USEBARFREQ)
       freqString = sprintf('Bar=%.1f Hz',barFreq);
     else
@@ -156,7 +163,7 @@ for istd = 1:length(stdDevsMs)
     else
       params{2}.fig.title = sprintf('iso variability test (%s, no deviation) %s',freqString,metricLabels{iaccent});
     end
-    params{2}.plotFname = sprintf('iso_variability_test_gaussInput_%s_%s_%dms_dev_%s.ps',filtType,freqFileLabel,devMs,metricFileLabels{iaccent});
+    params{2}.plotFname = sprintf('iso_variability_test_%s_%s_%dms_dev_%s.ps',filtType,freqFileLabel,devMs,metricFileLabels{iaccent});
     
     inData{1} = rp{1};
     inData{2} = aud_st;

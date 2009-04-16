@@ -269,7 +269,7 @@ if(ismember('entropy',params.perform))
   
 end
 
-if(ismember('onsetExpectation',params.perform))
+if(ismember('onsetExpectDist',params.perform))
   params.fig.axLocs = union(params.fig.axLocs,'squarePlot_top');
   params.fig.axLocs = union(params.fig.axLocs,'infoBox_top');
   [figH,axHList] = rp_figure(params.fig);
@@ -278,9 +278,6 @@ if(ismember('onsetExpectation',params.perform))
   
   expectData = thisRP.data{thisRPCols.expectationError};
   expectData = ensemble_datastruct2tree(expectData);
-  radiusLim = 0.3;
-  %polar(topAx,pi/5,radiusLim,'w');
-  %hold on;
   polar(topAx,expectData.thetaDistPlotInfo,expectData.radDistPlotInfo);
 
   axes(infoAx);
@@ -301,8 +298,74 @@ if(ismember('onsetExpectation',params.perform))
     close(figH);
   end
   
-  
 end
+
+if(ismember('expectProbByOnset',params.perform))
+  params.fig.axLocs = {};
+  params.fig.axLocs = union(params.fig.axLocs,'squarePlot_top');
+  params.fig.axLocs = union(params.fig.axLocs,'squarePlot_bottom');
+  params.fig.axLocs = union(params.fig.axLocs,'smallLegend_topRight');
+  params.fig.axLocs = union(params.fig.axLocs,'smallLegend_bottomRight');
+
+  expectData = thisRP.data{thisRPCols.expectationError};
+  expectData = ensemble_datastruct2tree(expectData);
+  onsetExpectMtx = expectData.onsetExpectMtx;
+  onsetsToPlot = params.expectProbByOnset.onsetsToPlot;
+   
+  %obtain the onset pattern to plot in the legend
+  inSig = audArray{1}.data{audArrayCols.wvf};
+  fpParams.thresh = 0.01;
+  peakIdxs = find_peaks(inSig,fpParams);
+  startLegendPlot = peakIdxs(min(onsetsToPlot));
+  endLegendPlot = peakIdxs(max(onsetsToPlot)+1);
+  
+  nOnsets = length(onsetsToPlot);
+  
+  for iOnset = 1:nOnsets
+    onsetNum = onsetsToPlot(iOnset);
+    
+    if(mod(iOnset-1,2) == 0)
+      [figH,axHList] = rp_figure(params.fig);
+      currentAx = get_axhandle(axHList,'squarePlot_top');
+      legendAx = get_axhandle(axHList,'smallLegend_topRight');
+    else
+      currentAx = get_axhandle(axHList,'squarePlot_bottom');
+      legendAx = get_axhandle(axHList,'smallLegend_bottomRight');
+    end
+ 
+
+    bar(legendAx,inSig(startLegendPlot:endLegendPlot),'barwidth',0.5);
+    hold(legendAx,'on');
+    bar(legendAx,peakIdxs(onsetNum)-startLegendPlot, ...
+	inSig(peakIdxs(onsetNum)),'EdgeColor',[1 0 0],'barwidth',0.8);
+    set(legendAx,'visible','off','xlim',[-4 (endLegendPlot-startLegendPlot+6)]);
+    
+    axes(currentAx);
+    compass(currentAx,sum(onsetExpectMtx(:,onsetNum)),'r');
+    hold on;
+    compass(currentAx,onsetExpectMtx(:,onsetNum));
+    camroll(currentAx,90);
+    camzoom(currentAx,1.15);
+   
+    if(isfield(params,'savePlot') && params.savePlot && ...
+       (mod(iOnset,2) == 0) )
+      [pth,fstub,ext] = fileparts(params.plotFname);
+      if(params.separatePages)
+	pfname = [fstub '_expectProbByOnset' ext];
+	print(params.format,fullfile(params.savePath,pfname));
+      else
+	pfname = [fstub ext];
+	print(params.format,'-append',fullfile(params.savePath,pfname));
+      end
+      disp(sprintf('Writing new plots to %s\n\n',fullfile(params.savePath,pfname))); 
+      close(figH);
+    end %savePlot
+    
+  end %for iOnset
+  
+end %expectProbByOnset
+   
+
 
 outData = axHList;
 
