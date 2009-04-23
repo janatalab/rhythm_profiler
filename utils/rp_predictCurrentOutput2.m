@@ -14,7 +14,12 @@ function onsetExpectMtx = rp_predictCurrentOutput(varargin)
 % Author(s):
 % Stefan Tomic 3/17/2009
 
+
 %ASSUMES WE ARE WORKING WITH IMPULSE INPUTS FOR NOW
+%THIS VERSION FINDS THE PEAKS OF THE RESON FILTER OUTPUT TO
+%DETERMINE PHASE. IT DOESN'T SEEM TO BE AS EFFECTIVE AS JUST
+%LOOKING AT THE HILBERT TRANSFORM
+
 
 for iArg = 1:2:nargin
   switch(varargin{iArg})

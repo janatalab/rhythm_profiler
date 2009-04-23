@@ -14,8 +14,6 @@ function onsetExpectMtx = rp_predictCurrentOutput(varargin)
 % Author(s):
 % Stefan Tomic 3/17/2009
 
-%ASSUMES WE ARE WORKING WITH IMPULSE INPUTS FOR NOW
-
 for iArg = 1:2:nargin
   switch(varargin{iArg})
    case 'resonBankOut'
@@ -41,7 +39,6 @@ fid =1;
 fprintf(fid,['\nCalculating reson filter predictor, assuming on no' ...
 	     ' future input. Onset # ']);
 
-%figure(2);
 compAxH = axes;
 axis square;set(gca,'visible','off');
 labelAxH = axes('position',[0 .9 .1 .1],'visible','off');
@@ -82,10 +79,6 @@ for iOnset = 1:nOnsets
     else
       y2List = zeros(size(resonBankOut,1),1);
     end
-    
-    %hilbertResonBankOut = hilbert(resonBankOut')';
-    %y1ListHil = hilbertResonBankOut(:,onsetTimesSamps(iOnset)-15);
-    %y2ListHil = hilbertResonBankOut(:,onsetTimesSamps(iOnset)-16);
        
     switch(params.resonType)
      case 'reson_z'
@@ -100,35 +93,30 @@ for iOnset = 1:nOnsets
       for iSample = 1:nSamples
 	
 	expectValue(:,iSample) = (-a1List.*y1List -a2List.*y2List)./a0List;
-	%expectValueHil(:,iSample) = (-a1List.*y1ListHil -a2List.*y2ListHil)./a0List;
 	
 	y2List = y1List;
 	y1List = expectValue(:,iSample);
 	
-	%y2ListHil = y1ListHil;
-	%y1ListHil = expectValueHil(:,iSample);
-	
       end
       
       expectSeries = [resonBankOutNoOnset expectValue];
-      %expectSeriesHil = [hilbertResonBankOut(:,1:onsetTimesSamps(iOnset)-15) ...
-%			 expectValueHil];
-					     
       hilbertExpectSeries = hilbert(expectSeries')';
+      hilbertExpectSeries = hilbertExpectSeries./abs(hilbertExpectSeries);
       onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,onsetTimesSamps(iOnset));
-      %onsetExpectMtx(:,iOnset) = expectSeriesHil(:,onsetTimesSamps(iOnset));
+      
       %{
-      if(iOnset >= 55)
-	figure(2);compass(compAxH,hilbertExpectSeries(:,onsetTimesSamps(iOnset)));
-	hold on;
-	compass(compAxH,sum(hilbertExpectSeries(:,onsetTimesSamps(iOnset))),'r');
-	axes(labelAxH);
-	cla;
-	text(.1,.8,['onset # ' num2str(iOnset)]);
-	text(.1,.4,['samp # ' num2str(onsetTimesSamps(iOnset))]);
-	hold off;
-      end
+      cMap = hsv(10);
+      cSpec = cMap(mod(iOnset-1,10)+1,:);
+      figure(3);
+      subplot(2,1,1);
+      hold on;
+      plot(expectSeries(10,:),'color',cSpec);      
+      subplot(2,1,2);
+      hold on;
+      plot(angle(hilbertExpectSeries(10,:)),'color',cSpec);
       %}
+
+
     end
   end
 
