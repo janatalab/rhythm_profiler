@@ -13,7 +13,7 @@ PLOT_PERIODICITY_SURF = 1;
 USEBARFREQ = 1;
 
 pulseFreq = 6; %pulse frequency in Hz.
-barFreq = .25;
+barFreq = .5;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -50,16 +50,22 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 stdDevsMs = [0];
 %stdDevsMs = 0;
 
-metricLabels = {'meter = 3/4','meter = 4/4','meter = 6/8','alternate23'};
+metricLabels = {'isochronous_.125sp','meter = 3/4','accent every other','meter = 4/4','meter = 6/8','alternate23'};
 %metricLabels = {'hpbwReson_8thpower_morefilts'};
 %accentPatterns = {[1]};
+ %
+accentPatterns = { [1 0 0 0 0 0 0 0] };
+%{
+[1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
 
-accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
+		   
+		   
+		   
+		   [1 0 0 0 .5 0 0 0],...
 		   [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
 		   [1  0 .33  0 .33  0 .66   0  .33  0 .33  0],...
 		   [1 .66 1  .66  .66  ] };
-
-
+%}
 for istd = 1:length(stdDevsMs)
   for iaccent = 1:length(accentPatterns)
     
@@ -78,7 +84,7 @@ for istd = 1:length(stdDevsMs)
     end
     pulsePeriodSamps = round(pulsePeriod*Fs);    
     
-    onsetTimesSamps = [1:pulsePeriodSamps:sigLen];
+    onsetTimesSamps = [pulsePeriodSamps*8:pulsePeriodSamps:sigLen+pulsePeriodSamps];
     numOnsets = length(onsetTimesSamps);
     
     if(devMs ~= 0)
@@ -109,7 +115,8 @@ for istd = 1:length(stdDevsMs)
     params{1}.ipem.rp.resonatorBank.peakFinder.minPeakHeight = 0.1;
     %params{1}.ipem.rp.resonatorBank.resonFreqSpacing = 'linear';
     %params{1}.ipem.rp.resonatorBank.spacingHz = .1;
-    %params{1}.ipem.rp.resonatorBank.spacingFactor =0.25;
+    params{1}.ipem.rp.resonatorBank.spacingFactor =0.125;
+    params{1}.ipem.rp.Fs = Fs;
     
     ipemOut = ipem_proc_series(aud_st,params{1}.ipem);
     ipemOutCols = set_var_col_const(ipemOut.vars);
@@ -147,8 +154,9 @@ for istd = 1:length(stdDevsMs)
     actualStructLen = length(find(accentStruct > 0));
     startOnsetToPlot = actualStructLen*2+1;
     endOnsetToPlot = startOnsetToPlot+actualStructLen-1;
-    params{2}.expectProbByOnset.onsetsToPlot = [startOnsetToPlot:endOnsetToPlot];
-     
+    %params{2}.expectProbByOnset.onsetsToPlot = [startOnsetToPlot:endOnsetToPlot];
+    params{2}.expectProbByOnset.onsetsToPlot = [1:(length(find(sig > 0))-1)];
+
     if(USEBARFREQ)
       freqString = sprintf('Bar=%.1f Hz',barFreq);
     else

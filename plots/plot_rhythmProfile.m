@@ -320,35 +320,86 @@ if(ismember('expectProbByOnset',params.perform))
   endLegendPlot = peakIdxs(max(onsetsToPlot)+1);
   
   nOnsets = length(onsetsToPlot);
+  nResons = length(resonFreqs);
+  
+ 
+  colorMap = zeros(nResons,3);
+  slowFreqIdxs = find(resonFreqs < 0.4);
+  fastFreqIdxs = find(resonFreqs > 5);
+  midFreqIdxs = setdiff([1:nResons],union(slowFreqIdxs, ...
+					  fastFreqIdxs));
+  hsvMap = hsv(length(midFreqIdxs));
+  colorMap(slowFreqIdxs,:) = repmat([.6 .6 .6],length(slowFreqIdxs),1);
+  colorMap(fastFreqIdxs,:) =  repmat([.3 .3 .3],length(fastFreqIdxs),1);
+  colorMap(midFreqIdxs,:) = hsvMap(end:-1:end-length(midFreqIdxs)+1,:);
+
+  peakInfo = thisRP.data{thisRPCols.peakInfo};
+  peakInfoCols = set_var_col_const(peakInfo.vars);
+  peakFreqs = peakInfo.data{peakInfoCols.peakFreq};
+  peakHeights = peakInfo.data{peakInfoCols.normHeight};
+  [dummy,peakFreqIdxs] = ismember(peakFreqs,resonFreqs);
+    
+  nPeakFreqs = length(peakFreqs);
+  
+  extentRadius = max(max(abs(onsetExpectMtx(peakFreqIdxs,onsetsToPlot))));
   
   for iOnset = 1:nOnsets
     onsetNum = onsetsToPlot(iOnset);
+    
     
     if(mod(iOnset-1,2) == 0)
       [figH,axHList] = rp_figure(params.fig);
       currentAx = get_axhandle(axHList,'squarePlot_top');
       legendAx = get_axhandle(axHList,'smallLegend_topRight');
+      
+      cmapLegendH = axes('position',[.05 0.03 0.9 .02]);
+      image(1:nResons,'parent',cmapLegendH);
+      colormap(cmapLegendH,colorMap);
+      resonTicks = 1:floor(nResons/10):nResons;
+      resonTickLabels = sprintf('%.2f|',resonFreqs(resonTicks));
+      set(cmapLegendH,'ytick',[],'xtick',resonTicks,'xticklabel',resonTickLabels);
+      
+      
     else
       currentAx = get_axhandle(axHList,'squarePlot_bottom');
       legendAx = get_axhandle(axHList,'smallLegend_bottomRight');
     end
  
+    
+    
 
     bar(legendAx,inSig(startLegendPlot:endLegendPlot),'barwidth',0.5);
     hold(legendAx,'on');
     bar(legendAx,peakIdxs(onsetNum)-startLegendPlot, ...
 	inSig(peakIdxs(onsetNum)),'EdgeColor',[1 0 0],'barwidth',0.8);
     set(legendAx,'visible','off','xlim',[-4 (endLegendPlot-startLegendPlot+6)]);
-    
+       
     axes(currentAx);
-    compass(currentAx,sum(onsetExpectMtx(:,onsetNum)),'r');
+    hold off;
+  
+    extentVectorH = compass(complex(extentRadius*cos(1/50*pi),extentRadius*sin(1/50*pi)),'w');
+    set(extentVectorH,'visible','off');
     hold on;
-    compass(currentAx,onsetExpectMtx(:,onsetNum));
+     
+
+    for iPeakFreq = 1:nPeakFreqs
+      testNeighborIdxs = [peakFreqIdxs(iPeakFreq)-1:peakFreqIdxs(iPeakFreq)+1];      
+      neighborPeakDiffs = meanEnergy(peakFreqIdxs(iPeakFreq)-1:peakFreqIdxs(iPeakFreq)+1) - meanEnergy(peakFreqIdxs(iPeakFreq));
+      %normalize neighborPeakDiffs
+      neighborPeakDiffs = neighborPeakDiffs ./ (max(meanEnergy) - min(meanEnergy));
+      useIdxRefs = find(abs(neighborPeakDiffs./peakHeights(iPeakFreq)) < 0.12)
+      useIdxs = testNeighborIdxs(useIdxRefs);
+      useIdxs = peakFreqIdxs(iPeakFreq);
+      colorSpec = colorMap(peakFreqIdxs(iPeakFreq),:);
+      vecH = compass(mean(onsetExpectMtx(useIdxs,onsetNum)));
+      set(vecH,'color',colorSpec,'linewidth',2);
+    end
+    
     camroll(currentAx,90);
     camzoom(currentAx,1.15);
    
     if(isfield(params,'savePlot') && params.savePlot && ...
-       (mod(iOnset,2) == 0) )
+       (mod(iOnset,2) == 0) || (iOnset == nOnsets))
       [pth,fstub,ext] = fileparts(params.plotFname);
       if(params.separatePages)
 	pfname = [fstub '_expectProbByOnset' ext];
