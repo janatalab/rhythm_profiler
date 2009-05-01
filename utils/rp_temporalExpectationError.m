@@ -69,50 +69,20 @@ for iBank = 1:nBanks
     onsetHeights = onsetHeights';
   end
   
-  %figure(1);plot(rp.denv(iBank,:));set(gca,'xlim',[500 800]);
-  
   onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params.predictCurrentOutput);
-  
-  %using the square of the APS at the onset times as relative
-  %strengths of the resonators
-  %onsetExpectStrengths = rp.resonatorEnergy(:,onsetTimesSamps).^8;
-
-  %throwing out all but the most salient information
-  %normOnsetExpectStrengths = onsetExpectStrengths ./ max(abs(onsetExpectStrengths(:)));
-  %onsetExpectStrengths(normOnsetExpectStrengths < 0.1) = 0;
-  
-  %scaling the onset expectation matrix by the strengths and normalizing
-  %onsetExpectStrengths = abs(onsetExpectMtx).^4;
-  %onsetExpectMtx = onsetExpectMtx .* onsetExpectStrengths;
-  
-  %further scale by the onset heights
-  %onsetExpectMtx = onsetExpectMtx .* repmat(onsetHeights,nResons,1);
   
   onsetExpectMtxList{iBank} = onsetExpectMtx;
 
-  onsetTimeList{iBank} = onsetTimesSamps;
+  onsetTimesByBank{iBank} = onsetTimesSamps;
+  onsetHeightsByBank{iBank} = onsetHeights;
   onsetTimesAll = union(onsetTimesSamps,onsetTimesAll);
-  
-  %take the mean of expectation resonators at each onset
-  %meanVectorsPerOnset(iBank,:) = mean(onsetExpectMtx,1);
  
-  %further scale that mean by the onset height. Low onsets will
-  %contribute much less to the degree of expectancy violation or agreement
-  %meanVectorsPerOnset(iBank,:) = meanVectorsPerOnset(iBank,:) .* onsetHeights';
-
-  %angleCenters = [0:(2*pi)/100:2*pi];
-  
-  %[distAngles,distRadii,tout,rout] = rose_scaled(angle(meanVectorsPerOnset),abs(meanVectorsPerOnset),100,0,[],0);
-  
-  %distEntropy = entropy(distRadii);
-  %distMean = mean(meanVectorsPerOnset);
-
 end %for iBank
 
 %build a 3d matrix that contains the onset info of all banks
 onsetExpectMtxAllBanks = zeros(nBanks,nResons,length(onsetTimesAll));
 for iBank = 1:nBanks
-  [dummy,onsetIdx] = intersect(onsetTimesAll,onsetTimeList{iBank}); 
+  [dummy,onsetIdx] = intersect(onsetTimesAll,onsetTimesByBank{iBank}); 
   onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
 end
  
@@ -121,15 +91,13 @@ onsetExpectMtxAllBanks = squeeze(onsetExpectMtxAllBanks);
 %normalize expectation matrix
 onsetExpectMtxAllBanks = onsetExpectMtxAllBanks ./ max(abs(onsetExpectMtxAllBanks(:)));
 
+%We will only use the reson filters with peak outputs
 
 outData = ensemble_init_data_struct;
-outData.vars = {'onsetExpectMtx','onsetTimesSamps','distAngles','distRadii','distEntropy','distMean','thetaDistPlotInfo','radDistPlotInfo'};
+outData.vars = {'onsetExpectMtx','onsetTimesSamps','onsetTimesByBank','onsetHeightByBank'};
 outDataCols = set_var_col_const(outData.vars);
 outData.data{outDataCols.onsetExpectMtx} = onsetExpectMtxAllBanks;
 outData.data{outDataCols.onsetTimesSamps} = onsetTimesAll;
-%outData.data{outDataCols.distAngles} = distAngles;
-%outData.data{outDataCols.distRadii} = distRadii;
-%outData.data{outDataCols.distEntropy} = distEntropy;
-%outData.data{outDataCols.distMean} = distMean;
-%outData.data{outDataCols.thetaDistPlotInfo} = tout;
-%outData.data{outDataCols.radDistPlotInfo} = rout;
+outData.data{outDataCols.onsetTimesByBank} = onsetTimesByBank;
+outData.data{outDataCols.onsetHeightByBank} = onsetHeightsByBank;
+

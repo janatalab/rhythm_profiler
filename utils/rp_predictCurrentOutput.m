@@ -101,22 +101,8 @@ for iOnset = 1:nOnsets
       
       expectSeries = [resonBankOutNoOnset expectValue];
       hilbertExpectSeries = hilbert(expectSeries')';
-      hilbertExpectSeries = hilbertExpectSeries./abs(hilbertExpectSeries);
       onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,onsetTimesSamps(iOnset));
       
-      %{
-      cMap = hsv(10);
-      cSpec = cMap(mod(iOnset-1,10)+1,:);
-      figure(3);
-      subplot(2,1,1);
-      hold on;
-      plot(expectSeries(10,:),'color',cSpec);      
-      subplot(2,1,2);
-      hold on;
-      plot(angle(hilbertExpectSeries(10,:)),'color',cSpec);
-      %}
-
-
     end
   end
 
