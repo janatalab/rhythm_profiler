@@ -309,21 +309,21 @@ if(ismember('expectProbByOnset',params.perform))
 
   expectData = thisRP.data{thisRPCols.expectationError};
   expectData = ensemble_datastruct2tree(expectData);
-  onsetExpectMtx = expectData.onsetExpectMtx;
+  onsetExpectMtx = squeeze(expectData.onsetExpectMtx);
   onsetsToPlot = params.expectProbByOnset.onsetsToPlot;
    
-  vmFulfillPerOnset = expectData.vmFulfillPerOnset;
-  vmViolationPerOnset = expectData.vmViolationPerOnset;
+  vmFulfillPerOnset = expectData.vmFulfillPerOnset{1};
+  vmViolationPerOnset = expectData.vmViolationPerOnset{1};
   vmMetricLevelProb = expectData.vmMetricLevelProb;
   vmAngles = expectData.vmAngles;
-  vmTimingDev = expectData.vmTimingDev;
+  vmTimingDev = expectData.vmTimingDev{1};
   vmK = expectData.vmK;
   
   coherenceData = ensemble_datastruct2tree(thisRP.data{thisRPCols.coherence});
-  meanCohPerOnset1 = coherenceData.meanCohPerOnset1;
-  meanCohPerOnset2 = coherenceData.meanCohPerOnset2;
-  cohZeroPerOnset1 = coherenceData.cohZeroPerOnset1;
-  cohZeroPerOnset2 = coherenceData.cohZeroPerOnset2;
+  %meanCohPerOnset1 = coherenceData.meanCohPerOnset1;
+  %meanCohPerOnset2 = coherenceData.meanCohPerOnset2;
+  %cohZeroPerOnset1 = coherenceData.cohZeroPerOnset1;
+  %cohZeroPerOnset2 = coherenceData.cohZeroPerOnset2;
   
   nAngles = length(vmAngles);
    
@@ -392,15 +392,9 @@ if(ismember('expectProbByOnset',params.perform))
     set(extentVectorH,'visible','off');
     hold on;
      
-    thisMetricLevelProb = vmMetricLevelProb{onsetNum};
+    thisMetricLevelProb = vmMetricLevelProb{1,onsetNum};
     
     for iPeakFreq = 1:nPeakFreqs
-      %testNeighborIdxs = [peakFreqIdxs(iPeakFreq)-1:peakFreqIdxs(iPeakFreq)+1];      
-      %neighborPeakDiffs = meanEnergy(peakFreqIdxs(iPeakFreq)-1:peakFreqIdxs(iPeakFreq)+1) - meanEnergy(peakFreqIdxs(iPeakFreq));
-      %normalize neighborPeakDiffs
-      %neighborPeakDiffs = neighborPeakDiffs ./ (max(meanEnergy) - min(meanEnergy));
-      %useIdxRefs = find(abs(neighborPeakDiffs./peakHeights(iPeakFreq)) < 0.12);
-      %useIdxs = testNeighborIdxs(useIdxRefs);
       useIdxs = peakFreqIdxs(iPeakFreq);
       colorSpec = colorMap(peakFreqIdxs(iPeakFreq),:);
       axes(currentAx);
@@ -436,15 +430,12 @@ if(ismember('expectProbByOnset',params.perform))
       text(0,0.1,sprintf('fulfillment: %.2f',fulfillment));
       text(0,0.2,sprintf('violation: %.2f',violation));
       text(0,0.35,sprintf('vmTimingDev: %.2f',timingDev));
-      text(0,0.5,sprintf('meanCoh: %.2f',meanCohPerOnset1(onsetNum)));
-      %text(0,0.6,sprintf('meanCohSc: %.2f',meanCohPerOnset2(onsetNum)));
-      text(0,0.6,sprintf('cohZero: %.2f',cohZeroPerOnset1(onsetNum)));
-      %text(0,0.8,sprintf('cohZeroSc: %.2f',cohZeroPerOnset2(onsetNum)));
       
     else
       axes(metricLevelAxH);
       text(.5,.5,'no data');
     end
+    
     
     if(isfield(params,'savePlot') && params.savePlot && ...
        (mod(iOnset,2) == 0))
@@ -460,14 +451,15 @@ if(ismember('expectProbByOnset',params.perform))
       close(figH);
     end %savePlot
     
+    
   end %for iOnset
 
   meanViolation = mean(vmViolationPerOnset(onsetsToPlot));
   meanFulfillment = mean(vmFulfillPerOnset(onsetsToPlot));
   meanTimingDev = mean(vmTimingDev(onsetsToPlot));
   meanCompositeF = meanFulfillment./meanViolation;
-  meanMeanCoh = mean(meanCohPerOnset1(onsetsToPlot));
-  meanZeroCoh = mean(cohZeroPerOnset1(onsetsToPlot));
+  %meanMeanCoh = mean(meanCohPerOnset1(onsetsToPlot));
+  %meanZeroCoh = mean(cohZeroPerOnset1(onsetsToPlot));
   
   [figH,axHList] = rp_figure(params.fig);
   currentAx = get_axhandle(axHList,'squarePlot_top');
@@ -478,9 +470,27 @@ if(ismember('expectProbByOnset',params.perform))
   text(0,0.5,sprintf('fulfillment: %.2f',meanFulfillment));
   text(0,0.55,sprintf('violation: %.2f',meanViolation));
   text(0,0.6,sprintf('vmTimingDev: %.2f',meanTimingDev));			   
-  text(0,0.65,sprintf('meanCoh: %.2f',meanMeanCoh));
-  text(0,0.7,sprintf('cohZero: %.2f',meanZeroCoh));
+  %text(0,0.65,sprintf('meanCoh: %.2f',meanMeanCoh));
+  %text(0,0.7,sprintf('cohZero: %.2f',meanZeroCoh));
 
+  currentAx = get_axhandle(axHList,'squarePlot_bottom');
+  axes(currentAx);
+  set(currentAx,'visible','off');
+  peakFreqPerBand = coherenceData.peakFreqPerBand;
+  cohPerPeakPerBand = coherenceData.cohPerPeakPerBand;
+  nBands = length(peakFreqPerBand);
+  
+  text(0.2,0.95,'Coherence across Peaks, per band','fontweight','bold');
+  for iBand = 1:nBands
+    peakFreqB = peakFreqPerBand{iBand};
+    nPeaks = length(peakFreqB);
+    for iPeak = 1:nPeaks
+      cohB = cohPerPeakPerBand{iBand};
+      cohTxt = sprintf('%.2f Hz: %.2f\n',peakFreqB(iPeak),cohB(iPeak));
+      text(0.2*(iBand-1)+0.02,0.9-0.05*iPeak,cohTxt);
+    end
+  end
+  
   if(isfield(params,'savePlot') && params.savePlot && ...
      (mod(iOnset,2) == 0))
     [pth,fstub,ext] = fileparts(params.plotFname);

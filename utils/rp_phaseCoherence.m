@@ -100,8 +100,11 @@ for iOnset = 1:nOnsets
 	pause(1.5);
 	
       end %if(TEST_ANGLES)
-      
+   
       useVecs = vectorsNow(vectorsInRange);
+      insVector1 = repmat(insVector1,size(useVecs));
+      insVector2 = repmat(insVector2,size(useVecs));
+      
       numerator1 = sum(useVecs.*conj(insVector1)).*conj(sum(useVecs.*conj(insVector1)));
       coh1(iInsAngle) = numerator1/(sum(useVecs.*conj(useVecs))*sum(insVector1.*conj(insVector1)));
       numerator2 = sum(useVecs.*conj(insVector2)).*conj(sum(useVecs.*conj(insVector2)));

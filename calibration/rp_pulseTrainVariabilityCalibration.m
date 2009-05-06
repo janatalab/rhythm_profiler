@@ -50,12 +50,14 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 stdDevsMs = [0 20 40];
 %stdDevsMs = 0;
 
-metricLabels = {'meter = 3/4','isochronous','meter = 4/4','meter = 6/8'};
+metricLabels = {'meter = 3/4 high dens','isochronous','meter = 4/4','meter = 6/8'};
 %'accent every other','alternate23'
 %metricLabels = {'hpbwReson_8thpower_morefilts'};
 %accentPatterns = {[1]};
  
- accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
+ accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0]};
+
+%{		    
 		    [1 0 0 0 0 0 0 0],...	     
 		    [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
 		    [1  0 .33  0 .33  0 .66   0  .33  0 .33  0]};
@@ -63,7 +65,7 @@ metricLabels = {'meter = 3/4','isochronous','meter = 4/4','meter = 6/8'};
 
 %		   [1 0 0 0 .5 0 0 0],... 
 %		    [1 .66 1  .66  .66  ] };
-
+%}
 nStd = length(stdDevsMs);
 nAccent = length(accentPatterns);
 for istd = 1:nStd
@@ -103,7 +105,7 @@ for istd = 1:nStd
     
 
     %CONVOLVING WITH GAUSSIAN
-    %sig = conv(sig,gaussian);
+    sig = conv(sig,gaussian);
     
     aud_st = init_aud('Fs',Fs,'nchan',1,'wvf',sig);
     
@@ -125,7 +127,7 @@ for istd = 1:nStd
 
     %add von Mises calculations to the rp struct
     rp = rp_vonMisesExpectCalc(rp,params{1});
-    rp = rp_phaseCoherence(rp,params{1});
+    rp = rp_phaseCoherenceByPeak(rp,params{1});
     
     
     %params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
@@ -177,7 +179,7 @@ for istd = 1:nStd
     else
       params{2}.fig.title = sprintf('metric variability (%s, no deviation) %s',freqString,metricLabels{iaccent});
     end
-    params{2}.plotFname = sprintf('metric_variability_%s_%dms_dev_%s_vmDist_coh.ps',freqFileLabel,devMs,metricFileLabels{iaccent});
+    params{2}.plotFname = sprintf('metric_variability_%s_%dms_dev_%s.ps',freqFileLabel,devMs,metricFileLabels{iaccent});
     
     if(iscell(rp))
       inData{1} = rp{1};

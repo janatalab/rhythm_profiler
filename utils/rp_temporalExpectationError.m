@@ -86,7 +86,7 @@ for iBank = 1:nBanks
   onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
 end
  
-onsetExpectMtxAllBanks = squeeze(onsetExpectMtxAllBanks);
+%onsetExpectMtxAllBanks = squeeze(onsetExpectMtxAllBanks);
 
 %normalize expectation matrix
 onsetExpectMtxAllBanks = onsetExpectMtxAllBanks ./ max(abs(onsetExpectMtxAllBanks(:)));
