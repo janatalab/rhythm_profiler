@@ -307,18 +307,21 @@ if(ismember('expectProbByOnset',params.perform))
   params.fig.axLocs = union(params.fig.axLocs,'smallLegend_topRight');
   params.fig.axLocs = union(params.fig.axLocs,'smallLegend_bottomRight');
 
-  expectData = thisRP.data{thisRPCols.expectationError};
+  expectData = thisRP.data{thisRPCols.vmExpect};
   expectData = ensemble_datastruct2tree(expectData);
-  onsetExpectMtx = squeeze(expectData.onsetExpectMtx);
+  timingData = thisRP.data{thisRPCols.expectationError};
+  timingData = ensemble_datastruct2tree(timingData);
+  onsetExpectMtx = squeeze(timingData.onsetExpectMtx);
   onsetsToPlot = params.expectProbByOnset.onsetsToPlot;
    
   vmFulfillPerOnset = expectData.vmFulfillPerOnset{1};
-  vmViolationPerOnset = expectData.vmViolationPerOnset{1};
+  %vmViolationPerOnset = expectData.vmViolationPerOnset{1};
   vmMetricLevelProb = expectData.vmMetricLevelProb;
   vmAngles = expectData.vmAngles;
   vmTimingDev = expectData.vmTimingDev{1};
   vmK = expectData.vmK;
-  
+  vmAdjViolPerOnset = expectData.vmAdjViolPerOnset{1};
+  vmAreaPerPeak = expectData.vmAreaPerPeak;
   coherenceData = ensemble_datastruct2tree(thisRP.data{thisRPCols.coherence});
   %meanCohPerOnset1 = coherenceData.meanCohPerOnset1;
   %meanCohPerOnset2 = coherenceData.meanCohPerOnset2;
@@ -355,7 +358,7 @@ if(ismember('expectProbByOnset',params.perform))
     
     vmPeakFreqs = expectData.vmPeakFreqs{onsetNum};
     [dummy,peakFreqIdxs] = ismember(vmPeakFreqs,resonFreqs);
-    nPeakFreqs = length(vmPeakFreqs);    
+    nPeakFreqs = length(vmPeakFreqs);
       
     if(mod(iOnset-1,2) == 0)
       [figH,axHList] = rp_figure(params.fig);
@@ -391,8 +394,8 @@ if(ismember('expectProbByOnset',params.perform))
     extentVectorH = compass(complex(extentRadius*cos(1/50*pi),extentRadius*sin(1/50*pi)),'w');
     set(extentVectorH,'visible','off');
     hold on;
-     
-    thisMetricLevelProb = vmMetricLevelProb{1,onsetNum};
+
+    %thisMetricLevelProb = vmMetricLevelProb{1,onsetNum};
     
     for iPeakFreq = 1:nPeakFreqs
       useIdxs = peakFreqIdxs(iPeakFreq);
@@ -401,44 +404,56 @@ if(ismember('expectProbByOnset',params.perform))
       vecH = compass(mean(onsetExpectMtx(useIdxs,onsetNum)));
       set(vecH,'color',colorSpec,'linewidth',2);
    
-      if(~isempty(thisMetricLevelProb))
-	plot(metricLevelAxH,thisMetricLevelProb(iPeakFreq,:),'color',colorSpec);
-	hold(metricLevelAxH,'on');
-      end
+      %if(~isempty(thisMetricLevelProb))
+%	plot(metricLevelAxH,thisMetricLevelProb(iPeakFreq,:),'color',colorSpec);
+%	hold(metricLevelAxH,'on');
+%      end
       
     end
-    
+
    
     camroll(currentAx,90);
     camzoom(currentAx,1.15);
   
-    if(~isempty(thisMetricLevelProb)) 
-      summedMetricLevelProb = sum(thisMetricLevelProb,1);
-      plot(metricLevelAxH,summedMetricLevelProb,'k');
-      set(metricLevelAxH,'xlim',[1 nAngles],'ylim',[0 (max(summedMetricLevelProb)+0.1)]);
-      set(metricLevelAxH,'xtick',round([1:round(nAngles/4):nAngles]),'xticklabel',sprintf('%.2f|',...
-						  vmAngles([1:round(nAngles/4):nAngles])));
+    
+    %if(~isempty(thisMetricLevelProb)) 
+    %  summedMetricLevelProb = sum(thisMetricLevelProb,1);
+    %  plot(metricLevelAxH,summedMetricLevelProb,'k');
+    %  set(metricLevelAxH,'xlim',[1 nAngles],'ylim',[0 (max(summedMetricLevelProb)+0.1)]);
+    %  set(metricLevelAxH,'xtick',round([1:round(nAngles/4):nAngles]),'xticklabel',sprintf('%.2f|',...
+%						  vmAngles([1:round(nAngles/4):nAngles])));
       axes(vmExpectProbH);
       
-      violation = vmViolationPerOnset(onsetNum);
+      %violation = vmViolationPerOnset(onsetNum);
       fulfillment = vmFulfillPerOnset(onsetNum);
       timingDev = vmTimingDev(onsetNum);
-      composite = fulfillment/violation;
+      adjviolation = vmAdjViolPerOnset(onsetNum);
+      %composite = fulfillment/violation;
       thisK = vmK{onsetNum};
     
-      text(0,0,sprintf('compositeF: %.2f',composite));
+      %text(0,0,sprintf('compositeF: %.2f',composite));
+      text(0,0,'tArea: ');
+      for(iPeak = 1:nPeakFreqs)
+	text(0.27*iPeak,0,sprintf('%.2f ',vmAreaPerPeak{onsetNum}(iPeak)));
+      end
+
+      text(0,0.4,'K: ');
+      for(iPeak = 1:nPeakFreqs)
+	text(0.27*iPeak,0.4,sprintf('%.2f ',thisK(iPeak)));
+      end
+      
       text(0,0.1,sprintf('fulfillment: %.2f',fulfillment));
-      text(0,0.2,sprintf('violation: %.2f',violation));
+      text(0,0.2,sprintf('Adj Violation: %.2f',adjviolation));
       text(0,0.35,sprintf('vmTimingDev: %.2f',timingDev));
       
-    else
-      axes(metricLevelAxH);
-      text(.5,.5,'no data');
-    end
-    
+ %   else
+ %     axes(metricLevelAxH);
+ %     text(.5,.5,'no data');
+ %   end
+ 
     
     if(isfield(params,'savePlot') && params.savePlot && ...
-       (mod(iOnset,2) == 0))
+       ((mod(iOnset,2) == 0) || iOnset == nOnsets))
       [pth,fstub,ext] = fileparts(params.plotFname);
       if(params.separatePages)
 	pfname = [fstub '_expectProbByOnset' ext];
@@ -454,10 +469,11 @@ if(ismember('expectProbByOnset',params.perform))
     
   end %for iOnset
 
-  meanViolation = mean(vmViolationPerOnset(onsetsToPlot));
+  %meanViolation = mean(vmViolationPerOnset(onsetsToPlot));
   meanFulfillment = mean(vmFulfillPerOnset(onsetsToPlot));
   meanTimingDev = mean(vmTimingDev(onsetsToPlot));
-  meanCompositeF = meanFulfillment./meanViolation;
+  meanAdjViol = mean(vmAdjViolPerOnset(onsetsToPlot));
+  %meanCompositeF = meanFulfillment./meanViolation;
   %meanMeanCoh = mean(meanCohPerOnset1(onsetsToPlot));
   %meanZeroCoh = mean(cohZeroPerOnset1(onsetsToPlot));
   
@@ -466,9 +482,9 @@ if(ismember('expectProbByOnset',params.perform))
   axes(currentAx);
   set(currentAx,'visible','off');
   text(0,0.75,'Mean across onsets','fontweight','bold');
-  text(0,0.45,sprintf('compositeF: %.2f',meanCompositeF));
+  %text(0,0.45,sprintf('compositeF: %.2f',meanCompositeF));
   text(0,0.5,sprintf('fulfillment: %.2f',meanFulfillment));
-  text(0,0.55,sprintf('violation: %.2f',meanViolation));
+  text(0,0.55,sprintf('adj violation: %.2f',meanAdjViol));
   text(0,0.6,sprintf('vmTimingDev: %.2f',meanTimingDev));			   
   %text(0,0.65,sprintf('meanCoh: %.2f',meanMeanCoh));
   %text(0,0.7,sprintf('cohZero: %.2f',meanZeroCoh));
@@ -491,8 +507,7 @@ if(ismember('expectProbByOnset',params.perform))
     end
   end
   
-  if(isfield(params,'savePlot') && params.savePlot && ...
-     (mod(iOnset,2) == 0))
+  if(isfield(params,'savePlot') && params.savePlot)
     [pth,fstub,ext] = fileparts(params.plotFname);
     if(params.separatePages)
       pfname = [fstub '_expectProbByOnset' ext];

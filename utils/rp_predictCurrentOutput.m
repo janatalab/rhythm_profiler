@@ -18,6 +18,8 @@ for iArg = 1:2:nargin
   switch(varargin{iArg})
    case 'resonBankOut'
     resonBankOut = varargin{iArg+1};
+   case 'resonFreqs'
+    resonFreqs = varargin{iArg+1};
    case 'Fs'
     Fs = varargin{iArg+1};
    case 'onsetTimesSamps'
@@ -35,6 +37,9 @@ end
 
 nOnsets = length(onsetTimesSamps);
 fid =1;
+rmsFrameSizeSamps = round(params.rmsFrameSize.*Fs);
+%rmsFrameSizeSamps = 50;
+nResons = length(resonFreqs);
 
 fprintf(fid,['\nCalculating reson filter predictor, assuming on no' ...
 	     ' future input. Onset # ']);
@@ -103,10 +108,30 @@ for iOnset = 1:nOnsets
       hilbertExpectSeries = hilbert(expectSeries')';
       onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,onsetTimesSamps(iOnset));
       
+      %calculate rms and normalize by energy
+      startSamp = onsetTimesSamps(iOnset) - rmsFrameSizeSamps + 1;
+      startSamp = max(startSamp,1);
+      endSamp = onsetTimesSamps(iOnset);
+      rmsThisFrame(:,iOnset) = sqrt(mean(abs(hilbertExpectSeries(:,startSamp:endSamp).^2),2));
+      meanThisFrame(iOnset) = mean(rmsThisFrame(:,iOnset));
+      %nonsetExpectMtx(:,iOnset) = onsetExpectMtx(:,iOnset) ./ maxThisFrame;
+      
+      %calculating rms by reson freq period
+      %for iReson = 1:nResons
+      %	resonPeriodSamps =1 ./ resonFreqs(iReson) .* Fs;
+      %endSamp = onsetTimesSamps(iOnset);
+      %startSamp = max(endSamp - resonPeriodSamps + 1,1);
+      %sThisFrame(iReson,iOnset) = sqrt(mean(abs(hilbertExpectSeries(iReson,startSamp:endSamp)).^2));
+      %end
+      %nonsetExpectMtx(:,iOnset) = onsetExpectMtx(:,iOnset) ./ sThisFrame(:,iOnset);
+      
     end
   end
 
 end % for iOnset
+
+%ronsetExpectMtx = onsetExpectMtx ./ rmsThisFrame;
+onsetExpectMtx = onsetExpectMtx ./ repmat(meanThisFrame,nResons,1);
 
 
 fprintf(fid,'\n');

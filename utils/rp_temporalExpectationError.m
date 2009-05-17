@@ -40,7 +40,7 @@ if(isfield(rp,'vars') && isfield(rp,'data'))
   rp = ensemble_datastruct2tree(rp);
 end
 
-params.peakfinder.thresh = 0.001;
+params.peakfinder.thresh = 0.05;
 params.Fs = 100;
 params.plotFileStub = '/data2/rhythm/rhythm_profiler/plots/beat_variability/angle_histograms';
 params.predictCurrentOutput.predictSec = 5;
@@ -69,6 +69,11 @@ for iBank = 1:nBanks
     onsetHeights = onsetHeights';
   end
   
+  resonPeakInfo = rp.peakInfo.bandPeakInfo{iBank};
+  lowestReson = resonPeakInfo.peakFreq(1);
+  rmsFrameSize = 1./lowestReson;
+  params.predictCurrentOutput.rmsFrameSize = rmsFrameSize;
+  
   onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params.predictCurrentOutput);
   
   onsetExpectMtxList{iBank} = onsetExpectMtx;
@@ -86,10 +91,8 @@ for iBank = 1:nBanks
   onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
 end
  
-%onsetExpectMtxAllBanks = squeeze(onsetExpectMtxAllBanks);
-
 %normalize expectation matrix
-onsetExpectMtxAllBanks = onsetExpectMtxAllBanks ./ max(abs(onsetExpectMtxAllBanks(:)));
+%onsetExpectMtxAllBanks = onsetExpectMtxAllBanks ./ max(abs(onsetExpectMtxAllBanks(:)));
 
 %We will only use the reson filters with peak outputs
 

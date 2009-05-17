@@ -1,5 +1,6 @@
 %plotPath = '/afs/cmb.ucdavis.edu/share/petrlab/rhythm_profiler/calibration/';
-plotPath = '/data2/rhythm/rhythm_profiler/plots/meter_prediction';
+%plotPath = '/data2/rhythm/rhythm_profiler/plots/meter_prediction';
+plotPath = '/data2/groove/rmgc/plots';
 globals = rhythmTap_globals;
 
 filtType = 'reson';
@@ -50,19 +51,18 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 stdDevsMs = [0 20 40];
 %stdDevsMs = 0;
 
-metricLabels = {'meter = 3/4 high dens','isochronous','meter = 4/4','meter = 6/8'};
-%'accent every other','alternate23'
+metricLabels = {'meter = 3/4 sum','meter = 6/8 sum','isochronous','meter = 4/4'};
+%'meter = 3/4','accent every other','alternate23'
 %metricLabels = {'hpbwReson_8thpower_morefilts'};
 %accentPatterns = {[1]};
  
- accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0]};
-
-%{		    
-		    [1 0 0 0 0 0 0 0],...	     
-		    [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
-		    [1  0 .33  0 .33  0 .66   0  .33  0 .33  0]};
+ accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],[1  0 .33  0 .33  0 .66   0  .33  0 .33  0]};
+		    %};
+%		    [1 0 0 0 0 0 0 0]};
+%		    [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
+%		    
 		   
-
+%
 %		   [1 0 0 0 .5 0 0 0],... 
 %		    [1 .66 1  .66  .66  ] };
 %}
@@ -118,7 +118,7 @@ for istd = 1:nStd
     %params{1}.ipem.rp.resonatorBank.resonFreqSpacing = 'linear';
     %params{1}.ipem.rp.resonatorBank.spacingHz = .1;
     params{1}.ipem.rp.resonatorBank.freqLimits = [0.25 10.0];
-    params{1}.ipem.rp.resonatorBank.spacingFactor =0.125;
+    %params{1}.ipem.rp.resonatorBank.spacingFactor =0.125;
     params{1}.ipem.rp.Fs = Fs;
     
     ipemOut = ipem_proc_series(aud_st,params{1}.ipem);
@@ -126,8 +126,8 @@ for istd = 1:nStd
     rp = ipemOut.data{ipemOutCols.rp};
 
     %add von Mises calculations to the rp struct
-    rp = rp_vonMisesExpectCalc(rp,params{1});
-    rp = rp_phaseCoherenceByPeak(rp,params{1});
+    %vmExpectData = rp_vonMisesExpectCalc(rp,params{1}.ipem.rp);
+    %rp = rp_phaseCoherenceByPeak(rp,params{1});
     
     
     %params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
@@ -160,8 +160,8 @@ for istd = 1:nStd
     params{2}.meanEnergy.yTickLabelFmt = '%.3f';
     
     actualStructLen = length(find(accentStruct > 0));
-    startOnsetToPlot = actualStructLen*8+1;
-    endOnsetToPlot = startOnsetToPlot+actualStructLen*3-1;
+    startOnsetToPlot = actualStructLen*6+1;
+    endOnsetToPlot = startOnsetToPlot+actualStructLen*5-1;
     params{2}.expectProbByOnset.onsetsToPlot = [startOnsetToPlot:endOnsetToPlot];
     %params{2}.expectProbByOnset.onsetsToPlot = [1:(length(find(sig > 0))-1)];
  

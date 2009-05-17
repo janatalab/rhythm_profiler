@@ -15,13 +15,15 @@ function outData = rp_phaseCoherenceByPeak(inData,params)
 %can be abstracted out
 
 
-TEST_ANGLES = 0;
+TEST_ANGLES = 1;
 
 params.metricLevelToleranceMs = 100;
 
-%probably shouldn't have time limit here, but this is necessary for
-%now
-%timeLimSec = [0 20];
+try
+  timeLimSec = params.timeLimSec;
+catch
+  timeLimSec = [];
+end
 
 mlToleranceSec = params.metricLevelToleranceMs./1000;
 
@@ -36,15 +38,17 @@ expectErrorStruct = rp.expectationError;
 onsetExpectMtx = expectErrorStruct.onsetExpectMtx;
 onsetTimesSamps = expectErrorStruct.onsetTimesSamps;
 inputHeightList = expectErrorStruct.onsetHeightByBank{1};
+onsetTimesByBand = expectErrorStruct.onsetTimesByBank;
+
 resonFreqs = rp.resonatorFreqs;
 Fs = rp.Fs;
+timeLimSamps = timeLimSec.*Fs;
 
 MMP = rp.meanResonatorEnergy;
 MMPPeaks = rp.peakInfo.peakFreq;
 MMPPeriods = 1./MMPPeaks;
 
-nOnsets = size(onsetExpectMtx,3);
-nPeaks = length(MMPPeaks);
+%nOnsets = size(onsetExpectMtx,3);
 nBands = size(rp.resonatorOut,1);
 
 refVec = complex(1,0);
@@ -53,23 +57,38 @@ peakPhaseTolerances = pi/6;
 
 for iBand = 1:nBands
   
-  %NEED TO GET PEAKS FOR EACH BAND.
+  MMPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,:)),2);
+  fpParams = params.resonatorBank.peakFinder;
+  peakIdxs = find_peaks(MMPThisBand,fpParams);
+  peakHeights = peak_heights('signal',MMPThisBand,'peakIdxs',peakIdxs);
+  if(isfield(fpParams,'minPeakHeight'))
+    goodPeakMask = peakHeights >= fpParams.minPeakHeight;
+    peakIdxs = peakIdxs(goodPeakMask);
+    peakHeights = peakHeights(goodPeakMask);
+  end
 
-  %MMPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,:)),2);
-  %fpParams = params.ipem.rp.resonatorBank.peakFinder;
-  %peakIdxs = find_peaks(MMPThisBand,fpParams);
-  %peakHeights = peak_heights('signal',meanEnergy,'peakIdxs',peakIdxs);
-  %if(isfield(fpParams,'minPeakHeight'))
-  %  goodPeakMask = peakHeights >= fpParams.minPeakHeight;
-  %  peakIdxs = peakIdxs(goodPeakMask,1);
-  %  peakHeights = peakHeights(goodPeakMask);
-  %end
-
-  [dummy,peakIdxs] = ismember(MMPPeaks,resonFreqs);
+  peakFreqsPerBand{iBand} = resonFreqs(peakIdxs);
+  nPeaks = length(peakIdxs);
   
+  %we should probably be sending onsetExpectMtx as a cell array of
+  %matrices instead of a big 3D matrix. This is why we need to
+  %match actual onset times for this band to the 3D matrix.
+  onsetTimesThisBand = onsetTimesByBand{iBand};
+  
+  if(~isempty(timeLimSec))
+    timeMask = (onsetTimesThisBand >= timeLimSamps(1) & ...
+		onsetTimesThisBand <= timeLimSamps(2));
+    onsetTimesThisBand = onsetTimesThisBand(timeMask);
+  end
+  
+  [dummy,onsetIdxsThisBand] = ismember(onsetTimesThisBand,onsetTimesSamps);
+  nOnsets = length(onsetIdxsThisBand);
+  onsetExpectThisBand = squeeze(onsetExpectMtx(iBand,:,onsetIdxsThisBand));
+  
+  mlMask = [];
+  mlAssign = [];
   for iOnset = 1:nOnsets
-  
-    peakPhases = angle(onsetExpectMtx(iBand,peakIdxs,iOnset));
+    peakPhases = angle(onsetExpectThisBand(peakIdxs,iOnset));
 
     %assigning onset to metric levels
     %if there aren't any metric levels within tolerance, assign the
@@ -81,32 +100,41 @@ for iBand = 1:nBands
     
     mlAssign(1:nPeaks,iOnset) = mlMask;
     
-  end
+  end %for iOnset  
   
+  cohPerPeak{iBand} = [];
   for iPeak = 1:nPeaks    
     
     peakRefIdx = peakIdxs(iPeak);
     
-    vecsThisPeak = squeeze(onsetExpectMtx(iBand,peakRefIdx,mlAssign(iPeak,:)))';
-    %get rid of the first onset since there really should be on
+    vecsThisPeak = squeeze(onsetExpectThisBand(peakRefIdx,find(mlAssign(iPeak,:))))';
+    %get rid of the first onset since there really should be no
     %expectation here
     vecsThisPeak(1) = [];
     
-    cohPerPeak(iPeak,1) = coherence(vecsThisPeak,refVec);
+    %there have been a few instances where only the first onset was
+    %assigned to a given peak
+    if(~isempty(vecsThisPeak))
+      cohPerPeak{iBand}(end+1,1) = coherence(vecsThisPeak,refVec);
+    else
+      peakHeights(iPeak) = [];
+      peakFreqsPerBand{iBand}(iPeak) = [];    
+    end
     
-  end
+  end %for iPeak
   
-end
+  peakHeightsPerBand{iBand,1} = peakHeights;
+  
+  
+end %for iBand
 
 cohStruct = ensemble_init_data_struct;
-cohStruct.vars = {'peakFreqPerBand','cohPerPeakPerBand'};
+cohStruct.vars = {'peakFreqPerBand','cohPerPeakPerBand','peakHeightsPerBand'};
 cohCols = set_var_col_const(cohStruct.vars);
 
-cohStruct.data{cohCols.peakFreqPerBand} = {MMPPeaks};
-cohStruct.data{cohCols.cohPerPeakPerBand} = {cohPerPeak};
+cohStruct.data{cohCols.peakFreqPerBand} = peakFreqsPerBand;
+cohStruct.data{cohCols.cohPerPeakPerBand} = cohPerPeak;
+cohStruct.data{cohCols.peakHeightsPerBand} = peakHeightsPerBand;
 
-inData.vars = {inData.vars{:} 'coherence'};
-inDataCols = set_var_col_const(inData.vars);
-inData.data{inDataCols.coherence} = cohStruct;
-outData = inData;
+outData = cohStruct;
 
