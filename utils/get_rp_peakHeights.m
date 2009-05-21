@@ -42,7 +42,6 @@ end
 
 [dummyVar,peakIdxs] = intersect(resonFreqs,peakFreqs);
 
-%pwParams.runMode = 'width_half_height';
 pwParams.interpolate = 1;
 [hhFreqs] = peak_heights('signal',rpEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',pwParams);
 

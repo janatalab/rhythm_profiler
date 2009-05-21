@@ -13,8 +13,8 @@ function outData = rp_vonMisesExpectCalc(inData,params)
 
 params.vmExpect.distResolution = 50;
 params.vmExpect.metricLevelToleranceMs = 100;
+params.timeLimSecs = [0 20];
 
-pwParams.runMode = 'width_half_height';
 
 metricLevelToleranceSec = params.vmExpect.metricLevelToleranceMs./1000;
 
@@ -28,6 +28,9 @@ if(iscell(rp))
 end
 
 rp = ensemble_datastruct2tree(rp);
+
+timeLimSamps = round((params.timeLimSecs).*rp.Fs)+1;
+%timeLimVec = timeLimSamps(1):timeLimSamps(2);
 
 expectErrorStruct = rp.expectationError;
 
@@ -46,6 +49,12 @@ for iBand = 1:nBands
   %matrices instead of a big 3D matrix. This is why we need to
   %match actual onset times for this band to the 3D matrix.
   onsetTimesThisBand = onsetTimesByBand{iBand};
+  
+  %were going to throw out the first onset because of spikes found
+  %at the beginning of denv. This is going to have to be revisited at an earlier
+  %processing stage (maybe even ANI)
+  onsetTimesThisBand(1) = [];
+  
   [dummy,onsetIdxsThisBand] = ismember(onsetTimesThisBand,onsetTimesSamps);
   nOnsets = length(onsetIdxsThisBand);
   onsetExpectThisBand = squeeze(onsetExpectMtx(iBand,:,onsetIdxsThisBand));
@@ -54,26 +63,37 @@ for iBand = 1:nBands
   denvAtOnsets = squeeze(rp.sumDenv(iBand,onsetTimesThisBand));
   denvThisBand = rp.sumDenv(iBand,:);
 
-  bandPeakFreqs = rp.peakInfo.bandPeakInfo{iBand}.peakFreq;
-  bandPeakIdxs = find(ismember(resonFreqs,rp.peakInfo.bandPeakInfo{1}.peakFreq));
+  
+  %getting band peak info. This should have really been done from
+  %rhythm_profiler
+  mppThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,:)),2);
+  bandPeakInfo = get_resonPeakInfo(mppThisBand,resonFreqs,peakFinderParams);
+  
+  
+  bandPeakFreqs = bandPeakInfo.peakFreq;
+  bandPeakIdxs = find(ismember(resonFreqs,bandPeakInfo.peakFreq));
   
   lowestResonPeriodSecs = 1./resonFreqs(bandPeakIdxs(1));
   lowestResonPeriodSamps = lowestResonPeriodSecs .* rp.Fs;
   denvEnergy = [];
   rEnergy = [];
   %calculate sliding energy for onsets and for reson
-  for iOnset = 1:nOnsets
-    endIdx = iOnset;
-    endTime = onsetTimesThisBand(endIdx);
-    startIdx = max(1,endTime - lowestResonPeriodSamps + 1);
+  %for iOnset = 1:nOnsets
+  %  endIdx = iOnset;
+  %  endTime = onsetTimesThisBand(endIdx);
+  %  startIdx = max(1,endTime - lowestResonPeriodSamps + 1);
     %startLim = endTime - lowestResonPeriodSamps;
     %onsetIdxs = find((onsetTimesThisBand > startLim) &( onsetTimesThisBand < endTime));
-    denvEnergy(iOnset) = sqrt(mean(denvThisBand(startIdx:endTime).^2));
+  %  denvEnergy(iOnset) = sqrt(mean(denvThisBand(startIdx:endTime).^2));
     %denvEnergy(iOnset) = sqrt(mean(denvAtOnsets(onsetIdxs).^2));
-  end
-    
-  %set zero values to realmin in order to avoid division by zero
-  %rEnergy(rEnergy == 0) = realmin;
+  %end
+   
+  %calculating denvEnergy across time window range of
+  %onsets. We should probably do this from the beginning, but we're
+  %avoiding the spike mentioned above
+  timeLimVec = onsetTimesThisBand(1):onsetTimesThisBand(end);
+  denvEnergy = sqrt(mean(denvThisBand(timeLimVec).^2));
+  
   adjDenvAtOnsets = denvAtOnsets ./ denvEnergy;
     
   for iOnset = 1:nOnsets
@@ -82,160 +102,78 @@ for iBand = 1:nBands
     thisComplexResonMags = abs(thisComplexResonOut);
     thisComplexResonPhases = angle(thisComplexResonOut);
     
-    %find the peak locations of the reson filter corresponding to this onset time
-    %thresholding this might be a little tricky. Revisit this if we
-    %are losing peaks (or have too many)
-    peakIdxs = find_peaks(thisComplexResonMags,peakFinderParams)';
-    peakHeights = peak_heights('signal',thisComplexResonMags,'peakIdxs',peakIdxs); 
-    goodPeakMask = peakHeights >= peakFinderParams.minPeakHeight;
-    peakIdxs = peakIdxs(goodPeakMask,1);
-    peakHeights = peakHeights(goodPeakMask);
-  
-    %throwing out peaks detected at edges for now. These should
-    %generally not be found except possibly at the beginning of
-    %the signal
-    if((~isempty(peakIdxs)) && (peakIdxs(1) == 1))
-      peakIdxs(1) = [];
-      peakHeights(1) = [];
-    end
-  
-    if((~isempty(peakIdxs)) && (peakIdxs(end) == length(resonFreqs)))
-      peakIdxs(end) = [];
-      peakHeights(end) = [];
-    end
-        
-    if(~isempty(peakIdxs))
-      
-  
-      peakFreqs = resonFreqs(peakIdxs);
-      peakWidths = peak_widths('signal',thisComplexResonMags,'peakIdxs',peakIdxs,'params',pwParams);
-      peakPhases = angle(thisComplexResonOut(peakIdxs))';
-      
-      nPeaks = length(peakIdxs);
-  
-      clear vmDistThisPeak vmAreaPerPeak vmProbPerPeak vmAdjProbPerPeak vmAdjProbPerPeakTest metricLevel pwProportion;
-      k = [];
-      timingDev = [];
-      for iPeak = 1:nPeaks
-	
-	borders = [peakWidths(iPeak*2-1) peakWidths(iPeak*2)];
-	if(diff(borders) ~= 0)
-	  pwProportion(iPeak) = abs(diff(resonFreqs(borders)))./ peakFreqs(iPeak)./peakHeights(iPeak);
-	else
-	  %taking care of super small peaks when reson sampling is sparse
-	  borders = [(borders(1)-1) (borders(2)+1)];
-	  pwProportion(iPeak) = abs(diff(resonFreqs(borders)))./ peakFreqs(iPeak)./peakHeights(iPeak);
-	  %pwProportion(iPeak) = pwProportion(iPeak) ./2;
-	end
-	  
-	%assuming that half of pwProportion is equivalent to variance
-	variance = pwProportion(iPeak).*pi;
-	%dispersion, k, is roughly equivalent to 1./variance 
-	k(iPeak)  = 1./(variance);
-	
-	%vmDistThisPeak =  von_mises_pdf(angleDistVector,peakPhases(iPeak),k(iPeak));
-	vmDistThisPeak =  von_mises_pdf(angleDistVector,0,k(iPeak));
-	
-	diffAngle = peakPhases(iPeak) - angleDistVector;
-	evalAngleIdx = find(abs(diffAngle) == min(abs(diffAngle)));
-	
-	
-	%weight = thisComplexResonMags(peakIdxs(iPeak))./nPeaks;
-	weight = thisComplexResonMags(peakIdxs(iPeak));
-	
-	vmProbPerPeak(iPeak) = vmDistThisPeak(evalAngleIdx).*weight;
-	
-	
-	if(angleZeroIdx >= evalAngleIdx)
-	  areaIdxs = evalAngleIdx:angleZeroIdx;
-	else
-	  areaIdxs = angleZeroIdx:evalAngleIdx;
-	end
-	
-	vmAreaPerPeak(iPeak) = sum(vmDistThisPeak(areaIdxs).*...
-				   weight.*(pi/distResolution));
-	
-	%vmAdjProbPerPeak(iPeak) = vmDistThisPeak(angleDistVector == 0) ...
-	%    .* thisAdjComplexResonMags(peakIdxs(iPeak));
+    peakFreqs = bandPeakInfo.peakFreq;
+    peakWidths = bandPeakInfo.baseWidths/4;
+    peakIdxs = bandPeakInfo.peakIdxs;
+    peakHeights = bandPeakInfo.normHeight;
+    peakPhases = angle(thisComplexResonOut(peakIdxs))';
+    nPeaks = length(peakIdxs);
 
-	%constructing an overall distribution matrix
-%{	
-if(iPeak == 1)
-	  clear metricLevel;
-	  basePeriod = 1./resonFreqs(peakIdxs(1));
-	  baseMetricLevel = vmDistThisPeak;
-	  metricLevel(1,:) = baseMetricLevel .* ...
-	      thisComplexResonMags(peakIdxs(1));
-	  numSamps = size(metricLevel,2);
-	else
-	  thisPeriod = 1./peakFreqs(iPeak);
-	  periodRatio = basePeriod/thisPeriod;
-	  numPeriodsBegin = -periodRatio/2;
-	  numPeriodsEnd = periodRatio/2;
-	  angleBegin = numPeriodsBegin*2*pi;
-	  angleEnd = numPeriodsEnd*2*pi;
-	  evalDist = [angleBegin:pi/distResolution:angleEnd];
-	  distThisPeak = von_mises_pdf(evalDist,peakPhases(iPeak),k(iPeak));
-	  distThisPeak = (distThisPeak - min(distThisPeak)) ./ ...
-	      (max(distThisPeak) - min(distThisPeak));
-	  resampDist = angleBegin:(angleEnd-angleBegin)/(numSamps-1):angleEnd;
-	  distThisPeakResamp = spline(evalDist,distThisPeak,resampDist);
-	  metricLevel(iPeak,:) = distThisPeakResamp .* thisComplexResonMags(peakIdxs(iPeak));
-      end
-      %}
+    clear variance vmDistThisPeak vmAreaPerPeak vmProbPerPeak vmAdjProbPerPeak vmAdjProbPerPeakTest metricLevel pwProportion;
+    k = [];
+    timingDev = [];
+    for iPeak = 1:nPeaks
 	
-      end %for iPeak
+      pwProportion(iPeak) = peakWidths(iPeak)./ peakFreqs(iPeak)./peakHeights(iPeak);
+      variance(iPeak) = pwProportion(iPeak);
+
+      k(iPeak)  = 1./(variance(iPeak));
+      vmDistThisPeak =  von_mises_pdf(angleDistVector,0,k(iPeak));
+      diffAngle = peakPhases(iPeak) - angleDistVector;
+      evalAngleIdx = find(abs(diffAngle) == min(abs(diffAngle)));
+      
+      weight = thisComplexResonMags(peakIdxs(iPeak))./nPeaks;
+      vmProbPerPeak(iPeak) = vmDistThisPeak(evalAngleIdx).*weight;
+
+      %find the indices to evaluate for the area of the von mises
+      %dist (timing dev calc)
+      if(angleZeroIdx >= evalAngleIdx)
+	areaIdxs = evalAngleIdx:angleZeroIdx;
+      else
+	areaIdxs = angleZeroIdx:evalAngleIdx;
+      end
+      
+      vmAreaPerPeak(iPeak) = sum(vmDistThisPeak(areaIdxs).*...
+				 weight.*(pi/distResolution));
     
-    %find the timing devation from the closest peak. This is our
-    %timing error
-    %sumMetricDist = sum(metricLevel,1);
-    %smdPeakIdxs = find_peaks(sumMetricDist,[]);
-    %smdPeakHeights = peak_heights('signal',sumMetricDist,'peakIdxs',smdPeakIdxs);
-    %smdPeakIdxs = smdPeakIdxs(smdPeakHeights >= 0.1);
-    %smdBorder1 = find(angleDistVector == 0);
-    %if we just happen to be smack in the middle of two peaks, take
-    %the later one (negative dir)
-    %smdBorder2 = ...
-%	smdPeakIdxs(find(abs(angleDistVector(smdPeakIdxs)) == min(abs(angleDistVector(smdPeakIdxs))),1,'first'));
-%    smdMin = min(smdBorder1,smdBorder2);
-%    smdMax = max(smdBorder1,smdBorder2);
-    %each slice is pi/distResolution wide
-%    smdArea = sum(sumMetricDist(smdMin:smdMax).*(pi/distResolution));
     
-    vmFulfillPerOnset{iBand}(iOnset) = sum(vmProbPerPeak);
-    %vmViolationPerOnset{iBand}(iOnset) = sum(1 - vmProbPerPeak);
-    vmAdjViolPerOnset{iBand}(iOnset) = adjDenvAtOnsets(iOnset) - sum(vmProbPerPeak);
-    %vmMetricLevelProb{iBand,iOnset} = metricLevel;
+      vmDistPerPeak(iPeak,:) = vmDistThisPeak;
+    end %for iPeak
+    
+    vmPredictionPerOnset{iBand}(iOnset) = sum(vmProbPerPeak);
+    vmViolationPerOnset{iBand}(iOnset) = abs(adjDenvAtOnsets(iOnset) - sum(vmProbPerPeak));
     vmAreaPerPeakList{iBand,iOnset} = vmAreaPerPeak;
+    vmProportionsPerPeakList{iBand,iOnset} = variance;
     vmPeakFreqsPerOnset{iBand,iOnset} = peakFreqs;
     vmK{iBand,iOnset} = k;
     vmTimingDev{iBand}(iOnset) = sum(vmAreaPerPeak);
-  end  % if(~isempty(peakIdxs))
-  
+    vmDistPerPeakPerOnset{iOnset} = vmDistPerPeak;
+    
   end %for iOnset 
-  
   
 end % for iBand
 
 expectationData = ensemble_init_data_struct;
 expectationData.vars{end+1} = 'vmAngles';
 expectationData.vars{end+1} = 'vmPeakFreqs';
-expectationData.vars{end+1} = 'vmFulfillPerOnset';
+expectationData.vars{end+1} = 'vmPredictionPerOnset';
 expectationData.vars{end+1} = 'vmAreaPerPeak';
-%expectationData.vars{end+1} = 'vmViolationPerOnset';
-expectationData.vars{end+1} = 'vmAdjViolPerOnset';
-expectationData.vars{end+1} = 'vmMetricLevelProb';
+expectationData.vars{end+1} = 'vmViolationPerOnset';
 expectationData.vars{end+1} = 'vmTimingDev';
 expectationData.vars{end+1} = 'vmK';
+expectationData.vars{end+1} = 'proportions';
+expectationData.vars{end+1} = 'vmDistPerOnset';
+expectationData.vars{end+1} = 'vmAngles';
 expDataCols = set_var_col_const(expectationData.vars);
 expectationData.data{expDataCols.vmAngles} = angleDistVector';
 expectationData.data{expDataCols.vmPeakFreqs} = vmPeakFreqsPerOnset;
-expectationData.data{expDataCols.vmFulfillPerOnset} = vmFulfillPerOnset;
-%expectationData.data{expDataCols.vmViolationPerOnset} = vmViolationPerOnset;
-expectationData.data{expDataCols.vmAdjViolPerOnset} = vmAdjViolPerOnset;
-expectationData.data{expDataCols.vmMetricLevelProb} = []; %vmMetricLevelProb;
+expectationData.data{expDataCols.vmPredictionPerOnset} = vmPredictionPerOnset;
+expectationData.data{expDataCols.vmViolationPerOnset} = vmViolationPerOnset;
 expectationData.data{expDataCols.vmAreaPerPeak} = vmAreaPerPeakList;
+expectationData.data{expDataCols.proportions} = vmProportionsPerPeakList;
 expectationData.data{expDataCols.vmTimingDev} = vmTimingDev;
+expectationData.data{expDataCols.vmDistPerOnset} = vmDistPerPeakPerOnset;
 expectationData.data{expDataCols.vmK} = vmK;
+expectationData.data{expDataCols.vmAngles} = angleDistVector;
 outData = expectationData;
 

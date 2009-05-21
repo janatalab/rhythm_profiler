@@ -54,6 +54,11 @@ for idx = 1:length(peakFreqs)
     else
       r = approxRatios{idx};
     end
+    
+    if(iscell(r))
+      r = r{1};
+    end
+    
     newRow = sprintf('%0.2f%8.2f%9.2f%8.2f%14s\n', ...
 		     peakFreqs(idx),normPeakFreqs(idx),widths(idx),heights(idx),r);
   else

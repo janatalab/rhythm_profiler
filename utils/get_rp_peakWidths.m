@@ -43,8 +43,9 @@ end
 
 [dummyVar,peakIdxs] = intersect(resonFreqs,peakFreqs);
 
-pwParams.runMode = 'width_half_height';
-pwParams.interpolate = 1;
+pwParams.calcAt = 'half_height';
+pwParams.interpolate.perform = 'spline';
+pwParams.interpolate.strength = 20;
 [hhFreqs] = peak_widths('signal',rpEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',pwParams);
 
 hhFreqWidths = hhFreqs(2:2:end) - hhFreqs(1:2:end-1);

@@ -23,11 +23,12 @@ if(size(resonFreqs,2) > size(resonFreqs,1))
 end
 
 peakIdxs = find_peaks(meanEnergy,params)';
-peakHeights = peak_heights('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs);
+phParams.transformation = 'proportion';
+normHeights = peak_heights('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',phParams);
 if(isfield(params,'minPeakHeight'))
-  goodPeakMask = peakHeights >= params.minPeakHeight;
+  goodPeakMask = normHeights >= params.minPeakHeight;
   peakIdxs = peakIdxs(goodPeakMask,1);
-  peakHeights = peakHeights(goodPeakMask);
+  normHeights = normHeights(goodPeakMask);
 end
 
 if(~isempty(peakIdxs))
@@ -36,23 +37,43 @@ if(~isempty(peakIdxs))
   normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;
   widths = get_rp_peakWidths('rpEnergy',meanEnergy,'peakFreqs',peakFreqs,'resonFreqs',resonFreqs);
   [approxRatios,ratioBinIdx,errorVec] = approx_peak_ratios('peakFreqs',peakFreqs,'maxPeakFreq',maxPeakEnergyFreq,'params',params);
+
+  %get peak areas
+  peakAreasFn = find_peaks('subfn_peak_areas');
+  peakAreas = peakAreasFn('signal',meanEnergy,'xVals',resonFreqs,'peakIdxs',peakIdxs);
+  %retrieve actual peak heights (not normalized)
+  phParams.transformation = 'none';
+  peakHeights = peak_heights('signal',meanEnergy,'peakIdxs', ...
+			     peakIdxs,'xVals',resonFreqs,'params',phParams);
+  
+  [dummyVar,peakIdxs] = intersect(resonFreqs,peakFreqs);
+
+  %get base peak widths
+  pwParams.calcAt = 'base_high';
+  pwParams.interpolate.perform = 'spline';
+  [baseFreqs] = peak_widths('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',pwParams);
+
+  baseWidths = baseFreqs(2:2:end) - baseFreqs(1:2:end-1);
+
+  
 else
   peakFreqs = [];
   normPeakFreqs = [];
   widths = [];
-  peakHeights = [];
+  normHeights = [];
   approxRatios = [];
   errorVec = [];
   ratioBinIdx = [];
 end
 
-
-
-
 outData.peakFreq = peakFreqs;
+outData.peakIdxs = peakIdxs;
 outData.normPeakFreq = normPeakFreqs;
 outData.width = widths;
-outData.normHeight = peakHeights;
+outData.baseWidths = baseWidths;
+outData.peakHeight = peakHeights;
+outData.normHeight = normHeights;
+outData.peakAreas = peakAreas;
 outData.approxRatio = approxRatios;
 outData.ratioBinIdx = ratioBinIdx;
 outData.errorVec = errorVec;

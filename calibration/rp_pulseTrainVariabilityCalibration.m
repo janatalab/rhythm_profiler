@@ -8,13 +8,15 @@ filtType = 'reson';
 PLOT_PERIODICITY_SURF = 1;
 PLOT_VMFULFILL = 0;
 PLOT_SUMRESONS = 0;
+WRITE2TABLE = 1;
+PLOT_KTEST = 0;
 %if this is set to 1, barFreq will be used rather than pulseFreq
 %bar freq determines the frequency of pulses based on the length of
 %the bar rather than duration between pulses
 USEBARFREQ = 1;
 
 pulseFreq = 6; %pulse frequency in Hz.
-barFreq = .5;
+barFreq = 0.5;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -48,29 +50,64 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 
 %standard deviations in ms
 %stdDevsMs = [0 20 40 60 80];
-stdDevsMs = [0 20 40];
+stdDevsMs = [0 20 40 80];
 %stdDevsMs = 0;
 
-metricLabels = {'meter = 3/4 sum','meter = 6/8 sum','isochronous','meter = 4/4'};
+metricLabels = {'meter = 6/8','isochronous','isofast','meter = 3/4','meter = 4/4','accent every other','alternate23'};
 %'meter = 3/4','accent every other','alternate23'
 %metricLabels = {'hpbwReson_8thpower_morefilts'};
 %accentPatterns = {[1]};
  
- accentPatterns = { [1  0 .33  0 .66  0 .33   0  .66  0 .33  0],[1  0 .33  0 .33  0 .66   0  .33  0 .33  0]};
-		    %};
-%		    [1 0 0 0 0 0 0 0]};
-%		    [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
-%		    
-		   
-%
-%		   [1 0 0 0 .5 0 0 0],... 
-%		    [1 .66 1  .66  .66  ] };
-%}
+accentPatterns = {[1  0 .33  0 .66  0 .33   0  .66  0 .33  0],...
+		  [1 0 0 0 0 0 0 0],...
+		  [1 0 1 0 1 0 1 0 1 0 1 0],...
+		  [1  0 .33  0 .33  0 .66   0  .33  0 .33  0],...
+		  [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
+		  [1 0 0 0 .5 0 0 0],... 
+		  [1 .66 1  .66  .66  ] };
+ 
+
+vmFields = {'scaleByMag','kMethod'};
+vmModes = {'no','k=4';...
+	   'no','width';...
+	   'no','area';...
+	   'yes','k=4';...
+	   'yes','width';...
+	   'yes','area'};
+
+nVmModes = size(vmModes,1);
+
+useAccentIdxs = [3];
+metricLabels = metricLabels(useAccentIdxs);
+accentPatterns = accentPatterns(useAccentIdxs);
+
 nStd = length(stdDevsMs);
 nAccent = length(accentPatterns);
-for istd = 1:nStd
-  for iaccent = 1:nAccent
+
+if(WRITE2TABLE)
+  tablefile = '/data2/groove/rmgc/mean_results_rmspeaksfulltime_fwhm.txt';
+  if(~exist(tablefile,'file'))
+    writeHeader = true;
+  else
+    writeHeader = false;
+  end
+  fid = fopen(tablefile,'a');
+  if(writeHeader)
+    fprintf(fid,'%13s %8s %4s %5s %5s %5s\n','meter','barFreq','dev','pred','viol','td');
+  end
+end
+
+for iaccent = 1:nAccent
+  %for ivmMode = 1:nVmModes
+  ivmMode = 1;
+    for istd = 1:nStd
+
     
+      useVmModes = vmModes(ivmMode,:);
+      vmParams = cell2struct(useVmModes,vmFields,2);
+      
+      
+      
     accentStruct = accentPatterns{iaccent};
     accentStructLen = length(accentStruct);
     
@@ -120,6 +157,9 @@ for istd = 1:nStd
     params{1}.ipem.rp.resonatorBank.freqLimits = [0.25 10.0];
     %params{1}.ipem.rp.resonatorBank.spacingFactor =0.125;
     params{1}.ipem.rp.Fs = Fs;
+    params{1}.ipem.rp.vmExpect = vmParams;
+    
+    
     
     ipemOut = ipem_proc_series(aud_st,params{1}.ipem);
     ipemOutCols = set_var_col_const(ipemOut.vars);
@@ -160,7 +200,7 @@ for istd = 1:nStd
     params{2}.meanEnergy.yTickLabelFmt = '%.3f';
     
     actualStructLen = length(find(accentStruct > 0));
-    startOnsetToPlot = actualStructLen*6+1;
+    startOnsetToPlot = actualStructLen*5+1;
     endOnsetToPlot = startOnsetToPlot+actualStructLen*5-1;
     params{2}.expectProbByOnset.onsetsToPlot = [startOnsetToPlot:endOnsetToPlot];
     %params{2}.expectProbByOnset.onsetsToPlot = [1:(length(find(sig > 0))-1)];
@@ -173,13 +213,15 @@ for istd = 1:nStd
     
     metricFileLabels = regexprep(metricLabels,'[\s=/]','');
     freqFileLabel = regexprep(freqString,'[\s=/]','');
+    titlestub = 'metric exemplars rmspeaksfulltime fwhm';
+    fstub = strrep(titlestub,' ','_');
     
     if(devMs ~= 0)
-      params{2}.fig.title = sprintf('metric variability (%s, std = %2d ms) %s',freqString,devMs,metricLabels{iaccent});
+      params{2}.fig.title = sprintf('%s (%s, std = %2d ms) %s',titlestub,freqString,devMs,metricLabels{iaccent});
     else
-      params{2}.fig.title = sprintf('metric variability (%s, no deviation) %s',freqString,metricLabels{iaccent});
+      params{2}.fig.title = sprintf('%s (%s, no deviation) %s',titlestub,freqString,metricLabels{iaccent});
     end
-    params{2}.plotFname = sprintf('metric_variability_%s_%dms_dev_%s.ps',freqFileLabel,devMs,metricFileLabels{iaccent});
+    params{2}.plotFname = sprintf('%s_%s_%dms_dev_%s.ps',fstub,freqFileLabel,devMs,metricFileLabels{iaccent});
     
     if(iscell(rp))
       inData{1} = rp{1};
@@ -220,6 +262,34 @@ for istd = 1:nStd
       plot_sumPeakResons(inData,vmParams);
     end
     
-  end
+    if(WRITE2TABLE)
+      
+      rpstruct = ensemble_datastruct2tree(rp{1});
+      predictionPerOnset = rpstruct.vmExpect.vmPredictionPerOnset{1};
+      violationPerOnset = rpstruct.vmExpect.vmViolationPerOnset{1};
+      timingdevPerOnset = rpstruct.vmExpect.vmTimingDev{1};
+      
+      mfulfill = mean(predictionPerOnset);
+      madjviol = mean(violationPerOnset);
+      mTD = mean(timingdevPerOnset);
+      
+      fprintf(fid,'%13s %8.2f %4d %6.2f %6.2f %6.2f\n',metricLabels{iaccent},barFreq,devMs,mfulfill,madjviol,mTD);
+    end
+      
+    
+    if(PLOT_KTEST)
+      kt_params.plotFname = params{2}.plotFname;
+      kt_params.plotPath = plotPath;
+      rmgc_plot_ktest(rp,kt_params);
+      
+      
+    end
+
+    
+    end
+  %end
 end
 
+if(WRITE2TABLE)
+  fclose(fid);
+end

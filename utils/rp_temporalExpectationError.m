@@ -40,11 +40,21 @@ if(isfield(rp,'vars') && isfield(rp,'data'))
   rp = ensemble_datastruct2tree(rp);
 end
 
+durSamps = size(rp.resonatorOut,3);
+
 params.peakfinder.thresh = 0.05;
 params.Fs = 100;
 params.plotFileStub = '/data2/rhythm/rhythm_profiler/plots/beat_variability/angle_histograms';
 params.predictCurrentOutput.predictSec = 5;
 params.predictCurrentOutput.resonType = rp.params.rp.resonatorBank.method;
+params.timeLimSecs = [0 20];
+
+timeLimSecs = params.timeLimSecs;
+Fs = params.Fs;
+timeLimSamps = round(timeLimSecs*Fs)+1;
+timeLimSamps(2) = min(timeLimSamps(2),durSamps);
+
+timeLimVec = [timeLimSamps(1):timeLimSamps(2)];
 
 plotFileStub = params.plotFileStub;
 
@@ -61,8 +71,12 @@ onsetTimesAll = [];
 for iBank = 1:nBanks
   warning off
   onsetTimesSamps = find_peaks(rp.sumDenv(iBank,:),params.peakfinder);
+  timeMask = find((onsetTimesSamps >= timeLimSamps(1)) & (onsetTimesSamps <= timeLimSamps(2)));
+  onsetTimesSamps = onsetTimesSamps(timeMask);
+  
   onsetHeights = peak_heights('signal',rp.sumDenv(iBank,:),'peakIdxs',onsetTimesSamps);
-  onsetBorders =  peak_widths('signal',rp.sumDenv(iBank,:),'peakIdxs',onsetTimesSamps);
+  pwParams.calcAt = 'base';
+  onsetBorders =  peak_widths('signal',rp.sumDenv(iBank,:),'peakIdxs',onsetTimesSamps,'params',pwParams);
   resonBankOut = squeeze(rp.resonatorOut(iBank,:,:)); 
   
   if(size(onsetHeights,1) > size(onsetHeights,2))
@@ -71,17 +85,23 @@ for iBank = 1:nBanks
   
   resonPeakInfo = rp.peakInfo.bandPeakInfo{iBank};
   lowestReson = resonPeakInfo.peakFreq(1);
+  peakIdxs = resonPeakInfo.peakIdxs;
   rmsFrameSize = 1./lowestReson;
   params.predictCurrentOutput.rmsFrameSize = rmsFrameSize;
-  
-  onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params.predictCurrentOutput);
-  
+  params.predictCurrentOutput.timeLimSecs = params.timeLimSecs;
+  onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'peakIdxs',peakIdxs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params.predictCurrentOutput);
+ 
+  %normalizing by RMS here
+  rmsThisBank = sqrt(mean(resonBankOut(peakIdxs,timeLimVec).^2,2));
+  meanRMSThisBank = mean(rmsThisBank);
+  onsetExpectMtx = onsetExpectMtx ./meanRMSThisBank;
+
   onsetExpectMtxList{iBank} = onsetExpectMtx;
 
   onsetTimesByBank{iBank} = onsetTimesSamps;
   onsetHeightsByBank{iBank} = onsetHeights;
   onsetTimesAll = union(onsetTimesSamps,onsetTimesAll);
- 
+  
 end %for iBank
 
 %build a 3d matrix that contains the onset info of all banks
@@ -91,11 +111,6 @@ for iBank = 1:nBanks
   onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
 end
  
-%normalize expectation matrix
-%onsetExpectMtxAllBanks = onsetExpectMtxAllBanks ./ max(abs(onsetExpectMtxAllBanks(:)));
-
-%We will only use the reson filters with peak outputs
-
 outData = ensemble_init_data_struct;
 outData.vars = {'onsetExpectMtx','onsetTimesSamps','onsetTimesByBank','onsetHeightByBank'};
 outDataCols = set_var_col_const(outData.vars);
