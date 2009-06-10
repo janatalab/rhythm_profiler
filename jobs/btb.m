@@ -16,8 +16,8 @@
 %Currently, only one type (wav or mid) can be processed during each
 %run, since they require different parameters to the model and
 %parameters are set at the top level.
-rp_proc_dir = '/home/stefan/wav_files/';
-input_file_pattern = '*.wav';
+rp_proc_dir = '/home/stefan/btb_analysis_dir/';
+input_file_pattern = '*.csv';
 
 %Remove the comment marks on the following two lines
 %and set your path if you are running btb on midi files instead of
@@ -56,6 +56,20 @@ switch lower(ext)
 
   params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','peakRatios','showInput'};
   params.plot.inputSigType = 'impulse';
+  
+ case {'.csv'}
+  params.Fs = 30; %make sure to set this to the appropriate Fs for your csv file
+  params.ipem.rp = rp_paramGroups('param_group',...
+				    'reson_filterQSpacing_periodBasedDecay',...
+				    'input_type','aud','gain_type','beta_distribution',...
+				    'perform_mulawCompression',0,...
+				    'Fs',params.Fs);
+  params.ipem.glob.process = {'rp'};
+  params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','peakRatios','showInput'};
+  params.plot.inputSigType = 'wvf';
+  params.plot.inputPlot.normalize = 1; %only normalizes the plot,not the input signal
+  params.csvDelim = '\t';
+  
 end
 
 %set this to a list of calculations you wish to force recalculation
@@ -88,7 +102,7 @@ params.plot.peakFinder.thresh = 0.25;
 params.plot.peakFinder.perform = {};
 params.plot.peakFinder.ratioLabels = params.ipem.rp.resonatorBank.peakFinder.ratioLabels;
 params.plot.meanEnergy.numticks = 4;
-params.plot.plotFname = 'btb.ps';
+params.plot.plotFname = 'btb_inverted_.ps';
 
 plot_dir_rhythm_profile(mapped_audioFileList,params);
 
