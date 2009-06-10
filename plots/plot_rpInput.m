@@ -82,9 +82,6 @@ for iAudGroup = 1:length(audArray)
 		    yMax .* ones(1,size(wvfPointsX,2))];
       plot(wvfPointsX,wvfPointsY,'Color',thisColor);
       
-      
-      
-      
      case 'wvf'
       yMin = 0;
       yMax = 1;

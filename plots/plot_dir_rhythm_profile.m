@@ -88,10 +88,12 @@ for iFile = 1:nFiles;
   clear audStruct;
 
   switch lower(ext)
-   case {'.wav','.mat'}
+   case {'.wav','.mat','.csv'}
 
     if(isfield(params,'srcMatVarName'))
       pa =  params_aud('path',path,'filename',[fstub ext],'var_name',params.srcMatVarName);
+    elseif(isfield(params,'csvDelim'))
+      pa =  params_aud('path',path,'filename',[fstub ext],'delim',params.csvDelim,'Fs',params.Fs);
     else
       pa = params_aud('path',path,'filename',[fstub ext]);
     end
