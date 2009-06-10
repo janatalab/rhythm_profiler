@@ -93,7 +93,7 @@ for iBand = 1:nBands
   %avoiding the spike mentioned above
   timeLimVec = onsetTimesThisBand(1):onsetTimesThisBand(end);
   denvEnergy = sqrt(mean(denvThisBand(timeLimVec).^2));
-  
+  d
   adjDenvAtOnsets = denvAtOnsets ./ denvEnergy;
     
   for iOnset = 1:nOnsets
