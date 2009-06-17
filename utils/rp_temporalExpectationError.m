@@ -42,12 +42,13 @@ end
 
 durSamps = size(rp.resonatorOut,3);
 
-params.peakfinder.thresh = 0.05;
-params.Fs = 100;
-params.plotFileStub = '/data2/rhythm/rhythm_profiler/plots/beat_variability/angle_histograms';
-params.predictCurrentOutput.predictSec = 5;
-params.predictCurrentOutput.resonType = rp.params.rp.resonatorBank.method;
-params.timeLimSecs = [0 20];
+params = rp.params;
+
+
+%params.peakfinder.thresh = 0.05;
+%params.Fs = 100;
+%params.predictCurrentOutput.predictSec = 5;
+%params.predictCurrentOutput.resonType = rp.params.rp.resonatorBank.method;
 
 timeLimSecs = params.timeLimSecs;
 Fs = params.Fs;
@@ -55,10 +56,6 @@ timeLimSamps = round(timeLimSecs*Fs)+1;
 timeLimSamps(2) = min(timeLimSamps(2),durSamps);
 
 timeLimVec = [timeLimSamps(1):timeLimSamps(2)];
-
-plotFileStub = params.plotFileStub;
-
-delete([plotFileStub '_bank*']);
 
 nResons = length(rp.resonatorFreqs);
 

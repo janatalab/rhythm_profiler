@@ -1,7 +1,7 @@
-function [mmpByFrame,stdmpByFrame,ratioBinsByFrame,ratioEntropyByFrame,ratioTally] = calc_mmpByFrame(resonEnergy,resonFreqs,params)
+function [mppByFrame,stdmpByFrame,ratioBinsByFrame,ratioEntropyByFrame,ratioTally] = calc_mppByFrame(resonEnergy,resonFreqs,params)
 % calculates a mean metric profile (MMP) on a frame-by-frame basis
 %
-% [mmpByFrame,stdmpByFrame,ratioBinsByFrame,ratioEntropyByFrame,ratioTally] = calc_mmpByFrame(resonEnergy,resonFreqs,params)function outData = rp_findResonPhases(inData,params)
+% [mppByFrame,stdmpByFrame,ratioBinsByFrame,ratioEntropyByFrame,ratioTally] = calc_mppByFrame(resonEnergy,resonFreqs,params)function outData = rp_findResonPhases(inData,params)
 %
 %  INPUT
 % 
@@ -23,8 +23,8 @@ end
 
 
 Fs = params.Fs;
-frameSizeSamps = params.mmpByFrame.frameSize*Fs;
-hopSizeSamps = params.mmpByFrame.hopSize*Fs;
+frameSizeSamps = params.mppByFrame.frameSize*Fs;
+hopSizeSamps = params.mppByFrame.hopSize*Fs;
 nSamps = size(resonEnergy,2);
 nFrames = floor((nSamps - frameSizeSamps - 1)/hopSizeSamps);
 ratioEntropyByFrame = nan(nFrames,1);
@@ -50,11 +50,11 @@ for iFrame = 1:nFrames
   mmpThisFrame = mean(resonEnergy(:,startSamp:stopSamp),2);
   stdmpThisFrame = std(resonEnergy(:,startSamp:stopSamp),[],2);
   
-  mmpByFrame(:,iFrame) = mmpThisFrame;
+  mppByFrame(:,iFrame) = mmpThisFrame;
   stdmpByFrame(:,iFrame) = stdmpThisFrame;
   
   params.resonatorBank.peakFinder.doReport = 0;
-  peakInfo = get_resonPeakInfo(mmpByFrame(:,iFrame),resonFreqs,params.resonatorBank.peakFinder);
+  peakInfo = get_resonPeakInfo(mppByFrame(:,iFrame),resonFreqs,params.resonatorBank.peakFinder);
   
   %use only peaks that successfully binned  
   idxsBinSuccesses = peakInfo.ratioBinIdx(~isnan(peakInfo.ratioBinIdx));
