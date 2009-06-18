@@ -86,7 +86,7 @@ for iBank = 1:nBanks
   resonPeakInfo = rp.peakInfo.bandPeakInfo{iBank};
   
   
-  onsetTimesByBand{iBank} = onsetTimesSamps;
+  onsetTimesSampsByBand{iBank} = onsetTimesSamps;
   onsetHeightsByBand{iBank} = onsetHeights;
 
   if(isempty(resonPeakInfo.peakFreq))
@@ -104,19 +104,9 @@ for iBank = 1:nBanks
 
 end %for iBank
 
-%build a 3d matrix that contains the onset info of all banks
-%onsetExpectMtxAllBanks = zeros(nBanks,nResons,length(onsetTimesAll));
-%for iBank = 1:nBanks
-%  [dummy,onsetIdx] = intersect(onsetTimesAll,onsetTimesByBank{iBank}); 
-%  onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
-%end
- 
 outData = ensemble_init_data_struct;
-%outData.vars = {'onsetExpectMtx','onsetTimesSamps','onsetTimesByBank','onsetHeightByBank'};
-outData.vars = {'onsetTimesByBand','onsetExpectByBand','onsetHeightByBand'};
+outData.vars = {'onsetTimesSampsByBand','onsetExpectByBand','onsetHeightByBand'};
 outDataCols = set_var_col_const(outData.vars);
-%outData.data{outDataCols.onsetExpectMtx} = onsetExpectMtxAllBanks;
-%outData.data{outDataCols.onsetTimesSamps} = onsetTimesAll;
-outData.data{outDataCols.onsetTimesByBand} = onsetTimesByBand;
+outData.data{outDataCols.onsetTimesSampsByBand} = onsetTimesSampsByBand;
 outData.data{outDataCols.onsetHeightByBand} = onsetHeightsByBand;
 outData.data{outDataCols.onsetExpectByBand} = onsetExpectMtxList;

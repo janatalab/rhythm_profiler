@@ -1,15 +1,31 @@
-function outData = rp_vonMisesExpectCalc(inData,params)
+function outData = rp_vonMisesExpectCalc(varargin)
 % Calculates an expectation error based on von Mises distributions across metric levels
 % 
 % outData = rp_vonMisesExpectCalc(inData,params)
 % 
-% INPUTS:
-% inData: a rhythm profile struct
-%            
+% INPUTS (tag/value pairs):
+%         rp - a rhythm profiler struct
+%   inputSig - the input signal to the resonator model (denv, sumDenv, or any
+%              other signal)
+%     params - the parameter structure of the rp
+%              params.vmExpect.distResolution: The bin size of the
+%                 von Mises distribution
+%
 % Copyright (c) 2009 The Regents of the University of California
 % All Rights Reserved.
 %
 % Author: Stefan Tomic 04/23/2009
+
+for iarg = 1:2:nargin
+  switch varargin{iarg}
+   case 'rp'
+    rp = varargin{iarg+1};
+   case 'inputSig'
+    inputSig = varargin{iarg+1};
+   case 'params'
+    params = varargin{iarg+1};
+  end
+end
 
 try
   params.vmExpect.distResolution = 50;
@@ -18,56 +34,52 @@ catch
   params.vmExpect.distResolution = 50;
 end
 
-%params.vmExpect.metricLevelToleranceMs = 100;
-%params.timeLimSecs = [0 20];
-
-
-%metricLevelToleranceSec = params.vmExpect.metricLevelToleranceMs./1000;
-
 distResolution = params.vmExpect.distResolution;
 angleDistVector = [-pi:pi/distResolution:pi];
 angleZeroIdx = find(angleDistVector == 0);
 
-rp = inData;
 if(iscell(rp))
   rp = rp{1};
 end
 
 rp = ensemble_datastruct2tree(rp);
 
-%timeLimSamps = round((params.timeLimSecs).*rp.Fs)+1;
-%timeLimVec = timeLimSamps(1):timeLimSamps(2);
-
 expectErrorStruct = rp.expectationError;
-
-onsetExpectMtx = expectErrorStruct.onsetExpectMtx;
-onsetTimesSamps = expectErrorStruct.onsetTimesSamps;
-onsetTimesByBand = expectErrorStruct.onsetTimesByBank;
 
 peakFinderParams =  params.resonatorBank.peakFinder;
 resonFreqs = rp.resonatorFreqs;
 nResons = length(resonFreqs);
-nBands = size(onsetExpectMtx,1);
+nBands = length(expectErrorStruct.onsetTimesSampsByBand);
 
 for iBand = 1:nBands
 
   %we should probably be sending onsetExpectMtx as a cell array of
   %matrices instead of a big 3D matrix. This is why we need to
   %match actual onset times for this band to the 3D matrix.
-  onsetTimesThisBand = onsetTimesByBand{iBand};
-  
+  onsetTimesThisBand = expectErrorStruct.onsetTimesSampsByBand{iBand};
+
+  if(length(onsetTimesThisBand) <=1)
+    vmPredictionPerOnset{iBand} = [];
+    vmViolationPerOnset{iBand} = [];
+    vmAreaPerPeakList{iBand} = [];
+    vmProportionsPerPeakList{iBand} = [];
+    vmPeakFreqs{iBand} = [];
+    vmK{iBand} = [];
+    vmTimingDev{iBand} = [];
+    vmDistPerPeakPerOnset = [];
+    continue;
+  end
+    
   %were going to throw out the first onset because of spikes found
   %at the beginning of denv. This is going to have to be revisited at an earlier
   %processing stage (maybe even ANI)
   onsetTimesThisBand(1) = [];
   
-  [dummy,onsetIdxsThisBand] = ismember(onsetTimesThisBand,onsetTimesSamps);
-  nOnsets = length(onsetIdxsThisBand);
-  onsetExpectThisBand = squeeze(onsetExpectMtx(iBand,:,onsetIdxsThisBand));
-
+  nOnsets = length(onsetTimesThisBand);
+  
   %obtain the denv magnitudes at onset times
-  denvAtOnsets = squeeze(rp.sumDenv(iBand,onsetTimesThisBand));
-  denvThisBand = rp.sumDenv(iBand,:);
+  denvAtOnsets = squeeze(inputSig(iBand,onsetTimesThisBand));
+  denvThisBand = inputSig(iBand,:);
 
   
   %getting band peak info. This should have really been done from
@@ -83,28 +95,20 @@ for iBand = 1:nBands
   lowestResonPeriodSamps = lowestResonPeriodSecs .* rp.Fs;
   denvEnergy = [];
   rEnergy = [];
-  %calculate sliding energy for onsets and for reson
-  %for iOnset = 1:nOnsets
-  %  endIdx = iOnset;
-  %  endTime = onsetTimesThisBand(endIdx);
-  %  startIdx = max(1,endTime - lowestResonPeriodSamps + 1);
-    %startLim = endTime - lowestResonPeriodSamps;
-    %onsetIdxs = find((onsetTimesThisBand > startLim) &( onsetTimesThisBand < endTime));
-  %  denvEnergy(iOnset) = sqrt(mean(denvThisBand(startIdx:endTime).^2));
-    %denvEnergy(iOnset) = sqrt(mean(denvAtOnsets(onsetIdxs).^2));
-  %end
    
   %calculating denvEnergy across time window range of
   %onsets. We should probably do this from the beginning, but we're
   %avoiding the spike mentioned above
   %timeLimVec = onsetTimesThisBand(1):onsetTimesThisBand(end);
   denvEnergy = sqrt(mean(denvThisBand.^2));
-  d
+
   adjDenvAtOnsets = denvAtOnsets ./ denvEnergy;
     
   for iOnset = 1:nOnsets
     
-    thisComplexResonOut = onsetExpectThisBand(:,iOnset);
+    
+    
+    thisComplexResonOut = expectErrorStruct.onsetExpectByBand{iBand}(:,iOnset);
     thisComplexResonMags = abs(thisComplexResonOut);
     thisComplexResonPhases = angle(thisComplexResonOut);
     
@@ -142,7 +146,6 @@ for iBand = 1:nBands
       vmAreaPerPeak(iPeak) = sum(vmDistThisPeak(areaIdxs).*...
 				 weight.*(pi/distResolution));
     
-    
       vmDistPerPeak(iPeak,:) = vmDistThisPeak;
     end %for iPeak
     
@@ -150,12 +153,14 @@ for iBand = 1:nBands
     vmViolationPerOnset{iBand}(iOnset) = abs(adjDenvAtOnsets(iOnset) - sum(vmProbPerPeak));
     vmAreaPerPeakList{iBand,iOnset} = vmAreaPerPeak;
     vmProportionsPerPeakList{iBand,iOnset} = variance;
-    vmPeakFreqsPerOnset{iBand,iOnset} = peakFreqs;
     vmK{iBand,iOnset} = k;
     vmTimingDev{iBand}(iOnset) = sum(vmAreaPerPeak);
     vmDistPerPeakPerOnset{iOnset} = vmDistPerPeak;
     
   end %for iOnset 
+  
+  vmPeakFreqs{iBand} = peakFreqs;
+  
   
 end % for iBand
 
@@ -172,7 +177,7 @@ expectationData.vars{end+1} = 'vmDistPerOnset';
 expectationData.vars{end+1} = 'vmAngles';
 expDataCols = set_var_col_const(expectationData.vars);
 expectationData.data{expDataCols.vmAngles} = angleDistVector';
-expectationData.data{expDataCols.vmPeakFreqs} = vmPeakFreqsPerOnset;
+expectationData.data{expDataCols.vmPeakFreqs} = vmPeakFreqs;
 expectationData.data{expDataCols.vmPredictionPerOnset} = vmPredictionPerOnset;
 expectationData.data{expDataCols.vmViolationPerOnset} = vmViolationPerOnset;
 expectationData.data{expDataCols.vmAreaPerPeak} = vmAreaPerPeakList;

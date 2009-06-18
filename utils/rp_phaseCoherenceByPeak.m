@@ -18,13 +18,6 @@ function outData = rp_phaseCoherenceByPeak(inData,params)
 TEST_ANGLES = 1;
 
 params.metricLevelToleranceMs = 100;
-
-%try
-%  timeLimSec = params.timeLimSec;
-%catch
-%  timeLimSec = [];
-%end
-
 mlToleranceSec = params.metricLevelToleranceMs./1000;
 
 rp = inData;
@@ -35,22 +28,17 @@ end
 rp = ensemble_datastruct2tree(rp);
 
 expectErrorStruct = rp.expectationError;
-%onsetExpectMtx = expectErrorStruct.onsetExpectMtx;
-%onsetTimesSamps = expectErrorStruct.onsetTimesSamps;
-%inputHeightList = expectErrorStruct.onsetHeightByBank{1};
-onsetTimesByBand = expectErrorStruct.onsetTimesByBand;
+onsetTimesSampsByBand = expectErrorStruct.onsetTimesSampsByBand;
 onsetExpectByBand = expectErrorStruct.onsetExpectByBand;
 onsetHeightByBand = expectErrorStruct.onsetHeightByBand;
 
 resonFreqs = rp.resonatorFreqs;
 Fs = rp.Fs;
-%timeLimSamps = timeLimSec.*Fs;
 
 MMP = rp.meanResonatorEnergy;
 MMPPeaks = rp.peakInfo.peakFreq;
 MMPPeriods = 1./MMPPeaks;
 
-%nOnsets = size(onsetExpectMtx,3);
 nBands = size(rp.resonatorOut,1);
 
 refVec = complex(1,0);
@@ -75,20 +63,9 @@ for iBand = 1:nBands
   %we should probably be sending onsetExpectMtx as a cell array of
   %matrices instead of a big 3D matrix. This is why we need to
   %match actual onset times for this band to the 3D matrix.
-  onsetTimesThisBand = onsetTimesByBand{iBand};
-  
-  %if(~isempty(timeLimSec))
-  %  timeMask = (onsetTimesThisBand >= timeLimSamps(1) & ...
-%		onsetTimesThisBand <= timeLimSamps(2));
-%    onsetTimesThisBand = onsetTimesThisBand(timeMask);
-%  end
-  
-  %[dummy,onsetIdxsThisBand] = ismember(onsetTimesThisBand,onsetTimesSamps);
-  %nOnsets = length(onsetIdxsThisBand);
-  %onsetExpectThisBand = squeeze(onsetExpectMtx(iBand,:,onsetIdxsThisBand));
+  onsetTimesThisBand = onsetTimesSampsByBand{iBand};
   nOnsets = length(onsetTimesThisBand);
   onsetExpectThisBand = onsetExpectByBand{iBand};
-  
   
   mlMask = [];
   mlAssign = [];
