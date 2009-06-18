@@ -18,12 +18,6 @@ for iArg = 1:2:nargin
   switch(varargin{iArg})
    case 'resonBankOut'
     resonBankOut = varargin{iArg+1};
-   case 'resonFreqs'
-    resonFreqs = varargin{iArg+1};
-   case 'peakIdxs'
-    peakIdxs = varargin{iArg+1};
-   case 'Fs'
-    Fs = varargin{iArg+1};
    case 'onsetTimesSamps'
     onsetTimesSamps = varargin{iArg+1};
    case 'onsetBorders'
@@ -37,21 +31,20 @@ for iArg = 1:2:nargin
   end
 end
 
-timeLimSecs = params.timeLimSecs;
-timeLimSamps = round(timeLimSecs*Fs);
+
+% we shouldn't have to check time lims here anymore
+% since the rhythm profile should have used the time lim
+% at the first stage of processing
+%timeLimSecs = params.timeLimSecs;
+%timeLimSamps = round(timeLimSecs*Fs);
 
 
 nOnsets = length(onsetTimesSamps);
 fid =1;
-rmsFrameSizeSamps = round(params.rmsFrameSize.*Fs);
-nResons = length(resonFreqs);
+Fs = params.Fs;
 
 fprintf(fid,['\nCalculating reson filter predictor, assuming on no' ...
 	     ' future input. Onset # ']);
-
-compAxH = axes;
-axis square;set(gca,'visible','off');
-labelAxH = axes('position',[0 .9 .1 .1],'visible','off');
 
 for iOnset = 1:nOnsets
     
@@ -90,13 +83,13 @@ for iOnset = 1:nOnsets
       y2List = zeros(size(resonBankOut,1),1);
     end
        
-    switch(params.resonType)
+    switch(params.resonatorBank.method)
      case 'reson_z'
       
       %look nSamples into the future. We need to go into the
       %future so that the hilbert transform correctly
       %approximates the current phase.
-      nSamples = round(params.predictSec .* Fs);
+      nSamples = round(params.temporalExpect.predictSec .* Fs);
       expectValue = [];
       expectValueHil = [];
   
@@ -112,16 +105,10 @@ for iOnset = 1:nOnsets
       expectSeries = [resonBankOutNoOnset expectValue];
       hilbertExpectSeries = hilbert(expectSeries')';
       onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,onsetTimesSamps(iOnset));
+     
+     otherwise
+      error('This function currently only supports reson_z filters.');
       
-      %calculate rms and normalize by energy
-      %this shouldn't be done here, esp. if normalizing by MPP
-      %peaks, but here we go. This will need to be changed.
-      %startSamp = onsetTimesSamps(iOnset) - rmsFrameSizeSamps + 1;
-      %startSamp = max(startSamp,1);
-      %endSamp = onsetTimesSamps(iOnset);
-      %rmsThisFrame(:,iOnset) = sqrt(mean(abs(hilbertExpectSeries(peakIdxs,startSamp:endSamp).^2),2));
-      %meanThisFrame(iOnset) = mean(rmsThisFrame(:,iOnset));
-  
     end
   end
 

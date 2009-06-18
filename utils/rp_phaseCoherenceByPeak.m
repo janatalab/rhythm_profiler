@@ -19,11 +19,11 @@ TEST_ANGLES = 1;
 
 params.metricLevelToleranceMs = 100;
 
-try
-  timeLimSec = params.timeLimSec;
-catch
-  timeLimSec = [];
-end
+%try
+%  timeLimSec = params.timeLimSec;
+%catch
+%  timeLimSec = [];
+%end
 
 mlToleranceSec = params.metricLevelToleranceMs./1000;
 
@@ -35,14 +35,16 @@ end
 rp = ensemble_datastruct2tree(rp);
 
 expectErrorStruct = rp.expectationError;
-onsetExpectMtx = expectErrorStruct.onsetExpectMtx;
-onsetTimesSamps = expectErrorStruct.onsetTimesSamps;
-inputHeightList = expectErrorStruct.onsetHeightByBank{1};
-onsetTimesByBand = expectErrorStruct.onsetTimesByBank;
+%onsetExpectMtx = expectErrorStruct.onsetExpectMtx;
+%onsetTimesSamps = expectErrorStruct.onsetTimesSamps;
+%inputHeightList = expectErrorStruct.onsetHeightByBank{1};
+onsetTimesByBand = expectErrorStruct.onsetTimesByBand;
+onsetExpectByBand = expectErrorStruct.onsetExpectByBand;
+onsetHeightByBand = expectErrorStruct.onsetHeightByBand;
 
 resonFreqs = rp.resonatorFreqs;
 Fs = rp.Fs;
-timeLimSamps = timeLimSec.*Fs;
+%timeLimSamps = timeLimSec.*Fs;
 
 MMP = rp.meanResonatorEnergy;
 MMPPeaks = rp.peakInfo.peakFreq;
@@ -75,15 +77,18 @@ for iBand = 1:nBands
   %match actual onset times for this band to the 3D matrix.
   onsetTimesThisBand = onsetTimesByBand{iBand};
   
-  if(~isempty(timeLimSec))
-    timeMask = (onsetTimesThisBand >= timeLimSamps(1) & ...
-		onsetTimesThisBand <= timeLimSamps(2));
-    onsetTimesThisBand = onsetTimesThisBand(timeMask);
-  end
+  %if(~isempty(timeLimSec))
+  %  timeMask = (onsetTimesThisBand >= timeLimSamps(1) & ...
+%		onsetTimesThisBand <= timeLimSamps(2));
+%    onsetTimesThisBand = onsetTimesThisBand(timeMask);
+%  end
   
-  [dummy,onsetIdxsThisBand] = ismember(onsetTimesThisBand,onsetTimesSamps);
-  nOnsets = length(onsetIdxsThisBand);
-  onsetExpectThisBand = squeeze(onsetExpectMtx(iBand,:,onsetIdxsThisBand));
+  %[dummy,onsetIdxsThisBand] = ismember(onsetTimesThisBand,onsetTimesSamps);
+  %nOnsets = length(onsetIdxsThisBand);
+  %onsetExpectThisBand = squeeze(onsetExpectMtx(iBand,:,onsetIdxsThisBand));
+  nOnsets = length(onsetTimesThisBand);
+  onsetExpectThisBand = onsetExpectByBand{iBand};
+  
   
   mlMask = [];
   mlAssign = [];

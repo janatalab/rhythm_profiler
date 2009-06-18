@@ -30,8 +30,8 @@ for iArg = 1:2:nargin
     BList = varargin{iArg+1};
    case('AList')
     AList = varargin{iArg+1};
-   case('params')
-    params = varargin{iArg+1};
+   case('inputSig')
+    inputSig = varargin{iArg+1};
   end
 end
 
@@ -42,20 +42,25 @@ end
 
 durSamps = size(rp.resonatorOut,3);
 
-params = rp.params;
+params = rp.params.rp;
 
+%onsetDetect.thresh contains the threshold value for detecting
+%onset times
+try
+  params.temporalExpect.onsetDetect.thresh;
+catch
+  warning('onset detector threshold not set. Setting to 0.05');
+  params.temporalExpect.onsetDetect.thresh = 0.05;
+end
 
-%params.peakfinder.thresh = 0.05;
-%params.Fs = 100;
-%params.predictCurrentOutput.predictSec = 5;
-%params.predictCurrentOutput.resonType = rp.params.rp.resonatorBank.method;
+try
+  params.temporalExpect.predictSec;
+catch
+  warning('reson predictor time not set. Setting to 5 s');
+  params.temporalExpect.predictSec = 5;
+end
 
-timeLimSecs = params.timeLimSecs;
 Fs = params.Fs;
-timeLimSamps = round(timeLimSecs*Fs)+1;
-timeLimSamps(2) = min(timeLimSamps(2),durSamps);
-
-timeLimVec = [timeLimSamps(1):timeLimSamps(2)];
 
 nResons = length(rp.resonatorFreqs);
 
@@ -67,13 +72,11 @@ onsetTimesAll = [];
 
 for iBank = 1:nBanks
   warning off
-  onsetTimesSamps = find_peaks(rp.sumDenv(iBank,:),params.peakfinder);
-  timeMask = find((onsetTimesSamps >= timeLimSamps(1)) & (onsetTimesSamps <= timeLimSamps(2)));
-  onsetTimesSamps = onsetTimesSamps(timeMask);
+  onsetTimesSamps = find_peaks(inputSig(iBank,:),params.temporalExpect.onsetDetect.thresh);
   
-  onsetHeights = peak_heights('signal',rp.sumDenv(iBank,:),'peakIdxs',onsetTimesSamps);
+  onsetHeights = peak_heights('signal',inputSig(iBank,:),'peakIdxs',onsetTimesSamps);
   pwParams.calcAt = 'base';
-  onsetBorders =  peak_widths('signal',rp.sumDenv(iBank,:),'peakIdxs',onsetTimesSamps,'params',pwParams);
+  onsetBorders =  peak_widths('signal',inputSig(iBank,:),'peakIdxs',onsetTimesSamps,'params',pwParams);
   resonBankOut = squeeze(rp.resonatorOut(iBank,:,:)); 
   
   if(size(onsetHeights,1) > size(onsetHeights,2))
@@ -81,38 +84,39 @@ for iBank = 1:nBanks
   end
   
   resonPeakInfo = rp.peakInfo.bandPeakInfo{iBank};
+  
+  
+  onsetTimesByBand{iBank} = onsetTimesSamps;
+  onsetHeightsByBand{iBank} = onsetHeights;
+
+  if(isempty(resonPeakInfo.peakFreq))
+    onsetExpectMtxList{iBank} = [];
+    continue;
+  end
+
   lowestReson = resonPeakInfo.peakFreq(1);
   peakIdxs = resonPeakInfo.peakIdxs;
   rmsFrameSize = 1./lowestReson;
   params.predictCurrentOutput.rmsFrameSize = rmsFrameSize;
-  params.predictCurrentOutput.timeLimSecs = params.timeLimSecs;
-  onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'peakIdxs',peakIdxs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params.predictCurrentOutput);
+  onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'peakIdxs',peakIdxs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params);
  
-  %normalizing by RMS here
-  rmsThisBank = sqrt(mean(resonBankOut(peakIdxs,timeLimVec).^2,2));
-  meanRMSThisBank = mean(rmsThisBank);
-  onsetExpectMtx = onsetExpectMtx ./meanRMSThisBank;
-
   onsetExpectMtxList{iBank} = onsetExpectMtx;
 
-  onsetTimesByBank{iBank} = onsetTimesSamps;
-  onsetHeightsByBank{iBank} = onsetHeights;
-  onsetTimesAll = union(onsetTimesSamps,onsetTimesAll);
-  
 end %for iBank
 
 %build a 3d matrix that contains the onset info of all banks
-onsetExpectMtxAllBanks = zeros(nBanks,nResons,length(onsetTimesAll));
-for iBank = 1:nBanks
-  [dummy,onsetIdx] = intersect(onsetTimesAll,onsetTimesByBank{iBank}); 
-  onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
-end
+%onsetExpectMtxAllBanks = zeros(nBanks,nResons,length(onsetTimesAll));
+%for iBank = 1:nBanks
+%  [dummy,onsetIdx] = intersect(onsetTimesAll,onsetTimesByBank{iBank}); 
+%  onsetExpectMtxAllBanks(iBank,1:nResons,onsetIdx) = onsetExpectMtxList{iBank};
+%end
  
 outData = ensemble_init_data_struct;
-outData.vars = {'onsetExpectMtx','onsetTimesSamps','onsetTimesByBank','onsetHeightByBank'};
+%outData.vars = {'onsetExpectMtx','onsetTimesSamps','onsetTimesByBank','onsetHeightByBank'};
+outData.vars = {'onsetTimesByBand','onsetExpectByBand','onsetHeightByBand'};
 outDataCols = set_var_col_const(outData.vars);
-outData.data{outDataCols.onsetExpectMtx} = onsetExpectMtxAllBanks;
-outData.data{outDataCols.onsetTimesSamps} = onsetTimesAll;
-outData.data{outDataCols.onsetTimesByBank} = onsetTimesByBank;
-outData.data{outDataCols.onsetHeightByBank} = onsetHeightsByBank;
-
+%outData.data{outDataCols.onsetExpectMtx} = onsetExpectMtxAllBanks;
+%outData.data{outDataCols.onsetTimesSamps} = onsetTimesAll;
+outData.data{outDataCols.onsetTimesByBand} = onsetTimesByBand;
+outData.data{outDataCols.onsetHeightByBand} = onsetHeightsByBand;
+outData.data{outDataCols.onsetExpectByBand} = onsetExpectMtxList;

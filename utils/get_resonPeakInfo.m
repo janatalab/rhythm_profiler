@@ -22,16 +22,17 @@ if(size(resonFreqs,2) > size(resonFreqs,1))
   resonFreqs = resonFreqs';
 end
 
-peakIdxs = find_peaks(meanEnergy,params)';
-phParams.transformation = 'proportion';
-normHeights = peak_heights('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',phParams);
-if(isfield(params,'minPeakHeight'))
-  goodPeakMask = normHeights >= params.minPeakHeight;
-  peakIdxs = peakIdxs(goodPeakMask,1);
-  normHeights = normHeights(goodPeakMask);
-end
+peakIdxs = find_peaks(meanEnergy,params);
 
 if(~isempty(peakIdxs))
+  phParams.transformation = 'proportion';
+  normHeights = peak_heights('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',phParams);
+  if(isfield(params,'minPeakHeight'))
+    goodPeakMask = normHeights >= params.minPeakHeight;
+    peakIdxs = peakIdxs(goodPeakMask,1);
+    normHeights = normHeights(goodPeakMask);
+  end
+
   peakFreqs = resonFreqs(peakIdxs);
   maxPeakEnergyFreq = resonFreqs(find(meanEnergy == max(meanEnergy(peakIdxs)),1,'first'));
   normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;
@@ -39,8 +40,7 @@ if(~isempty(peakIdxs))
   [approxRatios,ratioBinIdx,errorVec] = approx_peak_ratios('peakFreqs',peakFreqs,'maxPeakFreq',maxPeakEnergyFreq,'params',params);
 
   %get peak areas
-  peakAreasFn = find_peaks('subfn_peak_areas');
-  peakAreas = peakAreasFn('signal',meanEnergy,'xVals',resonFreqs,'peakIdxs',peakIdxs);
+  peakAreas = peak_areas('signal',meanEnergy,'xVals',resonFreqs,'peakIdxs',peakIdxs);
   %retrieve actual peak heights (not normalized)
   phParams.transformation = 'none';
   peakHeights = peak_heights('signal',meanEnergy,'peakIdxs', ...
@@ -60,7 +60,10 @@ else
   peakFreqs = [];
   normPeakFreqs = [];
   widths = [];
+  baseWidths = [];
+  peakHeights = [];
   normHeights = [];
+  peakAreas = [];
   approxRatios = [];
   errorVec = [];
   ratioBinIdx = [];

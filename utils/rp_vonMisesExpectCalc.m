@@ -11,12 +11,18 @@ function outData = rp_vonMisesExpectCalc(inData,params)
 %
 % Author: Stefan Tomic 04/23/2009
 
-params.vmExpect.distResolution = 50;
-params.vmExpect.metricLevelToleranceMs = 100;
-params.timeLimSecs = [0 20];
+try
+  params.vmExpect.distResolution = 50;
+catch
+  warning('von Mises distribution resolution not set. Setting to 50.');
+  params.vmExpect.distResolution = 50;
+end
+
+%params.vmExpect.metricLevelToleranceMs = 100;
+%params.timeLimSecs = [0 20];
 
 
-metricLevelToleranceSec = params.vmExpect.metricLevelToleranceMs./1000;
+%metricLevelToleranceSec = params.vmExpect.metricLevelToleranceMs./1000;
 
 distResolution = params.vmExpect.distResolution;
 angleDistVector = [-pi:pi/distResolution:pi];
@@ -29,7 +35,7 @@ end
 
 rp = ensemble_datastruct2tree(rp);
 
-timeLimSamps = round((params.timeLimSecs).*rp.Fs)+1;
+%timeLimSamps = round((params.timeLimSecs).*rp.Fs)+1;
 %timeLimVec = timeLimSamps(1):timeLimSamps(2);
 
 expectErrorStruct = rp.expectationError;
@@ -91,8 +97,8 @@ for iBand = 1:nBands
   %calculating denvEnergy across time window range of
   %onsets. We should probably do this from the beginning, but we're
   %avoiding the spike mentioned above
-  timeLimVec = onsetTimesThisBand(1):onsetTimesThisBand(end);
-  denvEnergy = sqrt(mean(denvThisBand(timeLimVec).^2));
+  %timeLimVec = onsetTimesThisBand(1):onsetTimesThisBand(end);
+  denvEnergy = sqrt(mean(denvThisBand.^2));
   d
   adjDenvAtOnsets = denvAtOnsets ./ denvEnergy;
     
