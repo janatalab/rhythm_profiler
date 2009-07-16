@@ -28,7 +28,11 @@ function outData = plot_findPeaks(ax,inData,params)
 % Author(s):
 % Stefan Tomic 3/07
 
-
+try
+  fontSize = params.fontSize;
+catch
+  fontSize = 10;
+end
 
 thisRP = inData;
 thisRPCols = set_var_col_const(thisRP.vars);
@@ -42,10 +46,15 @@ widths = peakInfo.data{peakInfoCols.width};
 heights = peakInfo.data{peakInfoCols.normHeight};
 approxRatios = peakInfo.data{peakInfoCols.approxRatio};
 
+if(isfield(params,'fpTitle'))
+  peakFindText = sprintf([params.fpTitle '\n\n']);
+else
+  peakFindText = '';
+end
 
 peakFindHeader = sprintf('Peak   Norm   Width   normHeight   Ratio\n');
 
-peakFindText = peakFindHeader;
+peakFindText = [peakFindText peakFindHeader];
 
 for idx = 1:length(peakFreqs)
   if(iscell(approxRatios))  
@@ -69,7 +78,7 @@ for idx = 1:length(peakFreqs)
 end
 axes(ax);
 set(ax,'visible','off');
-t = text(0,1,peakFindText,'VerticalAlignment','top');
+t = text(0,1,peakFindText,'VerticalAlignment','top','FontSize',fontSize);
   
 
   

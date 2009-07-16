@@ -1,8 +1,9 @@
 function outData = plot_meanResonEnergy(inData,params)
 %
+% this function is deprecated. plot_rpMeanResonEnergy should be
+% used instead.
 %
-%
-%
+% S.T. 2007
 
 try
   plotStyle = params.plotStyle;

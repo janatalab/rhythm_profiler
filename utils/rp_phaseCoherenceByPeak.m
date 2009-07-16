@@ -85,6 +85,7 @@ for iBand = 1:nBands
   end %for iOnset  
   
   cohPerPeak{iBand} = [];
+  keepPeaks = ones(nPeaks,1);
   for iPeak = 1:nPeaks    
     
     peakRefIdx = peakIdxs(iPeak);
@@ -95,16 +96,19 @@ for iBand = 1:nBands
     vecsThisPeak(1) = [];
     
     %there have been a few instances where only the first onset was
-    %assigned to a given peak
+    %assigned to a given peak. We are throwing these peaks out
     if(~isempty(vecsThisPeak))
       cohPerPeak{iBand}(end+1,1) = coherence(vecsThisPeak,refVec);
     else
-      peakHeights(iPeak) = [];
-      peakFreqsPerBand{iBand}(iPeak) = [];    
+      keepPeaks(iPeak) = 0;
+      %peakHeights(iPeak) = [];
+      %peakFreqsPerBand{iBand}(iPeak) = [];    
     end
     
   end %for iPeak
   
+  peakHeights(~keepPeaks) = [];
+  peakFreqsPerBand{iBand}(~keepPeaks) = [];
   peakHeightsPerBand{iBand,1} = peakHeights;
   
   

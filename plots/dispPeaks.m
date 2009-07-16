@@ -1,18 +1,26 @@
 function outData = dispPeaks(inData,params)
 
-rp = inData;
-rpCols = set_var_col_const(rp.vars);
+
+
 
 ax = params.ax;
 set(ax,'visible','off');
 
 
-nSets = length(rp.data{rpCols.peakResonFreqs});
+
+nSets = length(inData);
+
 
 for idx = 1:nSets
-  peakFreqs = rp.data{rpCols.peakResonFreqs}{idx};
-  meanEnergy = rp.data{rpCols.meanResonEnergy}{idx};
-  resonFreqs = rp.data{rpCols.resonatorFreqs}{idx};
+  
+  if(iscell(inData))
+    rp = inData{idx};
+    rpCols = set_var_col_const(rp.vars);
+  end
+  
+  peakFreqs = rp.data{rpCols.peakResonFreqs};
+  meanEnergy = rp.data{rpCols.meanResonEnergy};
+  resonFreqs = rp.data{rpCols.resonatorFreqs};
   maxPeakEnergyFreq = resonFreqs(find(meanEnergy == max(meanEnergy)));
   normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;
   nPeaks = length(peakFreqs);
@@ -37,8 +45,8 @@ for idx = 1:nSets
   end
    
   if(params.dispWidths)
-    peakWidths = rp.data{rpCols.peakWidths}{idx};
-    QFactor = rp.data{rpCols.QFactor}{idx};
+    peakWidths = rp.data{rpCols.peakWidths};
+    QFactor = rp.data{rpCols.QFactor};
     if(size(QFactor,2) > size(QFactor,1))
       QFactor = QFactor';
     end

@@ -64,6 +64,7 @@ switch lower(ext)
 				    'input_type','aud','gain_type','beta_distribution',...
 				    'perform_mulawCompression',0,...
 				    'Fs',params.Fs);
+  params.ipem.rp.invertInputSig = 0;
   params.ipem.glob.process = {'rp'};
   params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','peakRatios','showInput'};
   params.plot.inputSigType = 'wvf';
@@ -92,6 +93,7 @@ params.plot.legendParams.numKeys = 7;
 params.plot.colorbar = 1;
 params.plot.savePath = rp_proc_dir;
 params.plot.timeTickRes = 2.0;
+params.plot.timeLim = [0 15];
 params.plot.numResonTicks = 15;
 params.plot.maxResonFreqPlot = 10;
 params.plot.plotMeans = 1;
@@ -101,8 +103,9 @@ params.plot.savePlot = 1;
 params.plot.peakFinder.thresh = 0.25;
 params.plot.peakFinder.perform = {};
 params.plot.peakFinder.ratioLabels = params.ipem.rp.resonatorBank.peakFinder.ratioLabels;
+params.plot.peakFinder.ratioVals = params.ipem.rp.resonatorBank.peakFinder.ratioVals;
 params.plot.meanEnergy.numticks = 4;
-params.plot.plotFname = 'btb_inverted_.ps';
+params.plot.plotFname = 'btb.ps';
 
 plot_dir_rhythm_profile(mapped_audioFileList,params);
 

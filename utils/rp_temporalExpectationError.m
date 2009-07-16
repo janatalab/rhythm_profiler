@@ -83,8 +83,13 @@ for iBank = 1:nBanks
     onsetHeights = onsetHeights';
   end
   
-  resonPeakInfo = rp.peakInfo.bandPeakInfo{iBank};
-  
+  %temporary fix for ensemble_datastruct2tree
+  %rp.peakInfo.bandPeakInfo{iBank} = rp.peakInfo.bandPeakInfo{iBank}{1}
+  if(iscell(rp.peakInfo.bandPeakInfo{iBank}))
+    resonPeakInfo = ensemble_datastruct2tree(rp.peakInfo.bandPeakInfo{iBank}{1});
+  else
+    resonPeakInfo = rp.peakInfo.bandPeakInfo{iBank};
+  end
   
   onsetTimesSampsByBand{iBank} = onsetTimesSamps;
   onsetHeightsByBand{iBank} = onsetHeights;

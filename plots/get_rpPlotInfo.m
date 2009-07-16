@@ -16,6 +16,12 @@ thisRPCols = set_var_col_const(thisRP.vars);
 Fs = thisRP.data{thisRPCols.Fs};
 resonFreqs = thisRP.data{thisRPCols.resonatorFreqs};
 
+try
+  timeTickRes = params.timeTickRes;
+catch
+  timeTickRes = 2.0;
+end
+
 %make sure resonFreqs is a column vector to construct the
 %proper label string matrix
 if(size(resonFreqs,2) > 1)
@@ -38,6 +44,8 @@ resEnergy = thisRP.data{thisRPCols.resonatorEnergy};
 %if timelim is not set, then we can use the stored stdEnergy and
 %meanEnergy. Otherwise, we need to recalculate them to correspond
 %to the time limits being displayed. Same goes for our peak picker.
+
+
 if(~isfield(params,'timeLim'))
   stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
   meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
@@ -78,9 +86,21 @@ maxMeanEnergy = max(meanEnergy);
 energyMaxVal = max(resEnergy(:));
 
 nTimeSamps = size(resEnergy,2);
-timeVector = [0:nTimeSamps-1]./Fs;
-timeTick = [0:params.timeTickRes:timeVector(end)];
 
+%some rp structs only have mpp info (no time info)
+%this occurs generally in cases where mpps were calculated from
+%multiple mpps (e.g. average across multiple mpps)
+if(~isempty(Fs) && (nTimeSamps ~= 0))
+  timeVector = [0:nTimeSamps-1]./Fs;
+else
+  timeVector = [];
+end
+
+if(~isempty(timeVector))
+  timeTick = [0:timeTickRes:timeVector(end)];
+else
+  timeTick = 0;
+end
 
 
 

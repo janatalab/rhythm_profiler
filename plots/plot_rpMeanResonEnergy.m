@@ -1,4 +1,4 @@
-function plot_rpMeanResonEnergy(ax,thisRP,params)
+function plot_rpMeanResonEnergy(ax,inData,params)
 % Plots a mean periodicity profile (MPP)
 % 
 % plot_rpMeanResonEnergy(ax,thisRP,params)
@@ -22,52 +22,117 @@ function plot_rpMeanResonEnergy(ax,thisRP,params)
 % Author(s):
 % Stefan Tomic 4/07
 
-
-get_rpPlotInfo;
-axes(ax);
-  
-if(~isfield(params,'meanEnergy') || (~isfield(params.meanEnergy,'numticks')))
-  params.meanEnergy.numticks = 4;
+try
+  plotStyle = params.plotStyle;
+catch
+  plotStyle = 'line';
 end
 
-if(~isfield(params,'meanEnergy') || (~isfield(params.meanEnergy,'yTickLabelFmt')))
-  params.meanEnergy.yTickLabelFmt = '%.2f';
+try
+  showResonTickLabels = params.showResonTickLabels;
+catch
+  showResonTickLabels = 0;
 end
 
-if(ismember('stdEnergy',params.perform))
-
+%multiple RPs are passed in as an array of cell structs
+if(iscell(inData))
+  nData = length(inData);
+else
+  nData = 1;
+end
   
-  if(params.color)
-    colorSpec = [0 0.8 0];
+try(params.plotStd)
+  params.plotStd;
+catch
+  params.plotStd = ones(nData,1);
+end
+
+setYLim = [NaN NaN];
+
+for idx = 1:nData
+
+  if(iscell(inData))
+    thisRP = inData{idx};
   else
-    colorSpec = [0.5 0.5 0.5];
+    thisRP = inData;
   end
   
-  errorbar(meanEnergy,stdEnergy,'color',colorSpec);
+  if(isfield(params,'lineSpec'))
+    lspec = params.lineSpec{idx};
+  else
+    lspec = 'b-';
+  end
+ 
+  get_rpPlotInfo;
+  axes(ax);
+  
+  if(~isfield(params,'meanEnergy') || (~isfield(params.meanEnergy,'numticks')))
+    params.meanEnergy.numticks = 4;
+  end
+  
+  if(~isfield(params,'meanEnergy') || (~isfield(params.meanEnergy,'yTickLabelFmt')))
+    params.meanEnergy.yTickLabelFmt = '%.2f';
+  end
+  
+  if(params.plotStd(idx))
+    
+    
+    if(params.color)
+      colorSpec = [0 0.8 0];
+    else
+      colorSpec = [0.5 0.5 0.5];
+    end
+    
+     switch(plotStyle)
+     case 'line'      
+      errorbar(ax,meanEnergy,stdEnergy,lspec,'color',colorSpec);
+      lineH(idx) = plot(ax,meanEnergy,'color',lspec,'lineWidth',.5);
+     case 'fill'
+      axes(ax);
+      lineH(idx) = jbfill([1:length(meanEnergy)],meanEnergy'+stdEnergy',...
+	     meanEnergy'-stdEnergy',lspec,'k',1,0.5);
+    end
+  else
+    lineH(idx) = plot(ax,meanEnergy,'color',lspec,'lineWidth',.5);
+  end
+
   hold on;
-end
+  
+  if(ismember('stdEnergy',params.perform))
+    setYLim(1) = min(setYLim(1),0.8.*min(meanEnergy - stdEnergy));
+    setYLim(2) = max(setYLim(2),1.2.*max(meanEnergy + stdEnergy));
+  else
+    setYLim(1) = min(setYLim(1),0.8.*min(meanEnergy));
+    setYLim(2) = max(setYlim(2),1.2.*max(meanEnergy));
+  end
+  
+end %for idx
   
 if(isfield(params,'meanEnergy') && isfield(params.meanEnergy,'ylim'))
   ylim = params.meanEnergy.ylim;
-elseif(ismember('stdEnergy',params.perform))
-  ylim(1) = 0.8.*min(meanEnergy - stdEnergy);
-  ylim(2) = 1.2.*max(meanEnergy + stdEnergy);
 else
-  ylim(1) = 0.8.*min(meanEnergy);
-  ylim(2) = 1.2.*max(meanEnergy);
+  ylim = setYLim;
 end
-plot(meanEnergy,'k');
+
+
 set(ax,'ylim',ylim);
 set(ax,'xlim',[freqMin freqMax]);
-
+  
 set(ax,'Xtick',resonFreqTick);
-set(ax,'XtickLabel',[]);
-camorbit(ax,90,0);
+
+if(showResonTickLabels)
+  set(ax,'Xticklabel',resonFreqLabel);
+else
+  set(ax,'XtickLabel',[]);
+end
+
 ytick = [ylim(1):(ylim(2)-ylim(1))/(params.meanEnergy.numticks-1):ylim(2)]';
 
 set(ax,'ytick',ytick);
 set(ax,'yticklabel',num2str(ytick,params.meanEnergy.yTickLabelFmt));
-set(ax,'yaxislocation','right');
-rotateyticklabel(ax,-90);
-  
+    
+if(isfield(params,'legendLabels'))
+  legend(lineH,strrep(params.legendLabels,'_','\_'),'Location','NorthWest');
+end
+
 return

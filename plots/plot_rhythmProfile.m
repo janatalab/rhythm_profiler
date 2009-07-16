@@ -177,6 +177,10 @@ if(ismember('resonEnergy',params.perform))
   if(ismember('meanEnergy',params.perform))
     bottomRightAx = get_axhandle(axHList,'rectPlot_bottomRightVert');
     plot_rpMeanResonEnergy(bottomRightAx,thisRP,params);
+    camorbit(bottomRightAx,90,0);
+    set(bottomRightAx,'yaxislocation','right');
+    rotateyticklabel(bottomRightAx,-90);
+
   end
 
   if(ismember('findPeaks',params.perform))
