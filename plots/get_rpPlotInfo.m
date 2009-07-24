@@ -50,7 +50,7 @@ if(~isfield(params,'timeLim'))
   stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
   meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
 else
-  maxTime = size(thisRP.data{thisRPCols.resonatorOut}./Fs,3)./Fs - 1./Fs;
+  maxTime = size(thisRP.data{thisRPCols.resonatorOut},3)./Fs - 1./Fs;
   timeLim = min(params.timeLim,maxTime);
   tempTimeV = [timeLim(1)*Fs:timeLim(2)*Fs]+1;%add one to allow
                                                %for starting at

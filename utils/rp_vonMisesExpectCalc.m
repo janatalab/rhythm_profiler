@@ -106,8 +106,6 @@ for iBand = 1:nBands
     
   for iOnset = 1:nOnsets
     
-    
-    
     thisComplexResonOut = expectErrorStruct.onsetExpectByBand{iBand}(:,iOnset);
     thisComplexResonMags = abs(thisComplexResonOut);
     thisComplexResonPhases = angle(thisComplexResonOut);

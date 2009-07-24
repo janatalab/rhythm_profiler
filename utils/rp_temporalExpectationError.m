@@ -102,7 +102,7 @@ for iBank = 1:nBanks
   lowestReson = resonPeakInfo.peakFreq(1);
   peakIdxs = resonPeakInfo.peakIdxs;
   rmsFrameSize = 1./lowestReson;
-  params.predictCurrentOutput.rmsFrameSize = rmsFrameSize;
+  %params.predictCurrentOutput.rmsFrameSize = rmsFrameSize;
   onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'peakIdxs',peakIdxs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params);
  
   onsetExpectMtxList{iBank} = onsetExpectMtx;
