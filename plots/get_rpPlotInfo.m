@@ -49,6 +49,10 @@ resEnergy = thisRP.data{thisRPCols.resonatorEnergy};
 if(~isfield(params,'timeLim'))
   stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
   meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
+  peakInfo = thisRP.data{thisRPCols.peakInfo};
+  peakInfoCols = set_var_col_const(peakInfo.vars);
+  peakIdxs = peakInfo.data{peakInfoCols.peakIdxs};
+
 else
   maxTime = size(thisRP.data{thisRPCols.resonatorOut},3)./Fs - 1./Fs;
   timeLim = min(params.timeLim,maxTime);

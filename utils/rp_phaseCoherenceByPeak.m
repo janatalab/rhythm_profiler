@@ -11,11 +11,9 @@ function outData = rp_phaseCoherenceByPeak(inData,params)
 %
 % Author: Stefan Tomic 04/30/2009
 
-%hard coding params here. If this becomes a useful function, params
-%can be abstracted out
 
 
-TEST_ANGLES = 1;
+
 
 params.metricLevelToleranceMs = 100;
 mlToleranceSec = params.metricLevelToleranceMs./1000;

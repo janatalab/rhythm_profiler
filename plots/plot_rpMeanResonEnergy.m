@@ -60,7 +60,7 @@ for idx = 1:nData
   if(isfield(params,'lineSpec'))
     lspec = params.lineSpec{idx};
   else
-    lspec = 'b-';
+    lspec = [0 0 1];
   end
  
   get_rpPlotInfo;
@@ -103,8 +103,14 @@ for idx = 1:nData
     setYLim(2) = max(setYLim(2),1.2.*max(meanEnergy + stdEnergy));
   else
     setYLim(1) = min(setYLim(1),0.8.*min(meanEnergy));
-    setYLim(2) = max(setYlim(2),1.2.*max(meanEnergy));
+    setYLim(2) = max(setYLim(2),1.2.*max(meanEnergy));
   end
+  
+  if(ismember('plotPeaks',params.perform))
+    plot(peakIdxs,meanEnergy(peakIdxs),'g*');
+  end
+  
+  
   
 end %for idx
   
