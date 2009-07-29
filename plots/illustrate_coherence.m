@@ -6,18 +6,18 @@
 %
 % Author: Stefan Tomic 07/28/2009
 
-%close all
+close all
 
 %change mat file here to load data from a different trial
 dataPath = '/data2/rhythm/rhythmic_tapping_v2/project_data/resp_rp2';
-loadData = load(fullfile(dataPath,'03daj88201_2774_trial_9.mat'));
+loadData = load(fullfile(dataPath,'03daj88201_2774_trial_22.mat'));
 
 
 plotBand = 1;
-setXLimSecs = [10 14];
+setXLimSecs = [12 18];
 Fs = 100;
 setXLims = setXLimSecs.*Fs;
-setYLims = [-2 2];
+setYLims = [-1.5 1.5];
 timeTicks = setXLims(1):Fs:setXLims(2);
 timeTickLabels = sprintf('%d|',timeTicks./Fs);
 
@@ -161,12 +161,14 @@ for iPeak = 1:nPeaks
   
   %uncomment the following two lines to use a white vector to set
   %the max radius of the plot
-  %compass(-1.5+0*i,'w');
-  %hold on;
+  compass(-1.5+0*i,'w');
+  hold on;
   
   compass(vecsThisPeak);
-  %hold on;
-  %compass(1,'r');
+  
+  %reference vector
+  hold on;
+  compass(1,'r');
   
   camorbit(90,180);
   
