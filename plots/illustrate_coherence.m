@@ -6,7 +6,7 @@
 %
 % Author: Stefan Tomic 07/28/2009
 
-close all
+%close all
 
 %change mat file here to load data from a different trial
 dataPath = '/data2/rhythm/rhythmic_tapping_v2/project_data/resp_rp2';
