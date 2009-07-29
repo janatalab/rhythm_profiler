@@ -107,7 +107,13 @@ for idx = 1:nData
   end
   
   if(ismember('plotPeaks',params.perform))
-    plot(peakIdxs,meanEnergy(peakIdxs),'g*');
+    plot(peakIdxs,meanEnergy(peakIdxs),'r*');
+    nPeaks = length(peakIdxs);
+    for iPeak = 1:nPeaks
+      peakLabel = sprintf('%.2f',resonFreqs(peakIdxs(iPeak)));
+      text(peakIdxs(iPeak),meanEnergy(peakIdxs(iPeak)),peakLabel,...
+	   'horizontalalignment','center','verticalalignment','bottom');
+    end
   end
   
   

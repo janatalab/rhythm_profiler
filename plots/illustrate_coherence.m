@@ -1,26 +1,30 @@
-% adapted from rp_phaseCoherenceByPeak for illustrating the
-% coherence calculation
+% adapted from rp_phaseCoherenceByPeak for the SMPC 09 talk
+%illustrates the coherence calculation on RPs. 
 % 
-% outData = rp_phaseCoherence(inData,params)
-% 
-% INPUTS:
-% inData: a rhythm profile struct
-%            
-% Copyright (c) 2009 The Regents of the University of California
+% % Copyright (c) 2009 The Regents of the University of California
 % All Rights Reserved.
 %
 % Author: Stefan Tomic 07/28/2009
 
+close all
+
+%change mat file here to load data from a different trial
+dataPath = '/data2/rhythm/rhythmic_tapping_v2/project_data/resp_rp2';
+loadData = load(fullfile(dataPath,'03daj88201_2774_trial_9.mat'));
+
 
 plotBand = 1;
-
+setXLimSecs = [10 14];
+Fs = 100;
+setXLims = setXLimSecs.*Fs;
+setYLims = [-2 2];
+timeTicks = setXLims(1):Fs:setXLims(2);
+timeTickLabels = sprintf('%d|',timeTicks./Fs);
 
 
 params.metricLevelToleranceMs = 100;
 mlToleranceSec = params.metricLevelToleranceMs./1000;
 
-
-loadData = load('03daj88201_2774_trial_9.mat');
 
 tCols = set_var_col_const(loadData.thisTrialStruct.vars);
 rp_ensemble_struct = loadData.thisTrialStruct.data{tCols.rp}{1};
@@ -33,7 +37,8 @@ onsetExpectByBand = expectErrorStruct.onsetExpectByBand;
 onsetHeightByBand = expectErrorStruct.onsetHeightByBand;
 
 resonFreqs = rp.resonatorFreqs;
-Fs = rp.Fs;
+
+
 
 MPP = rp.meanResonatorEnergy;
 MPPPeaks = rp.peakInfo.peakFreq;
@@ -81,23 +86,26 @@ for iOnset = 1:nOnsets
 end %for iOnset  
   
 %PLOT THE MPP
-figParams.axLocs = {'rectPlot_top'};
-[figH,axHList] = rp_figure(figParams);
-topAxH = get_axhandle(axHList,'rectPlot_top');
+figure;
+set(gcf,'position',[100 100 800 1000],'paperposition',[0.5 0.5 8 10]);
+topAxH = axes('position',[0.1 0.6 0.65 0.34]);
+
 params.plot.showResonTickLabels = 1;
 params.plot.perform = {'plotPeaks'};
 params.plot.color = 1;
-params.plot.numResonTicks = 15;
+params.plot.numResonTicks = 8;
 plot_rpMeanResonEnergy(topAxH,rp_ensemble_struct,params.plot);
-rotateticklabel(topAxH);
+xlabel('Resonator Frequency (Hz)');
+%rotateticklabel(topAxH);
 
+ylabel('Amplitude');
 
 
 %PLOT THE PEAK RESON TIME SERIES WITH ONSETS SUPERIMPOSED
-figure;
-set(gcf,'position',[100 100 800 1000],'paperposition',[0.5 0.5 8 10]);
 for iPeak = 1:nPeaks
-  subplot(nPeaks,1,iPeak);
+  
+  bottomPos = 0.4 - (iPeak-1)*0.16;
+  axes('position',[0.1 bottomPos 0.65 0.15]);
   plot(resonOutThisBand(peakIdxs(iPeak),:));
   hold on;
   
@@ -107,12 +115,28 @@ for iPeak = 1:nPeaks
   
   onsetSigThisPeak(onsetTimesThisPeak) = inputThisBand(onsetTimesThisPeak);
   plot(onsetSigThisPeak,'r');
+
   
+  
+  if(iPeak == nPeaks)
+    set(gca,'xtick',timeTicks,'xticklabels',timeTickLabels,'ytick',[],'xlim',setXLims,'ylim',setYLims); 
+    xlabel('Time (s)');
+    ylabel('Amplitude');
+  else
+    set(gca,'xtick',[],'ytick',[],'xlim',setXLims,'ylim',setYLims);
+  end
+
+  ylims = get(gca,'ylim');
+  xlims = setXLims;
+  resonLabel = sprintf('%.2f Hz',resonFreqs(peakIdxs(iPeak)));
+  text(0.005*diff(xlims)+xlims(1),0.87*diff(ylims)+ylims(1),resonLabel);
+
 end
 
 
 
-
+figure;
+set(gcf,'position',[100 100 800 1000],'paperposition',[0.5 0.5 8 10]);
 
 cohPerPeak{plotBand} = [];
 keepPeaks = ones(nPeaks,1);
@@ -131,23 +155,27 @@ for iPeak = 1:nPeaks
     cohPerPeak{plotBand}(end+1,1) = coherence(vecsThisPeak,refVec);
   else
     keepPeaks(iPeak) = 0;
-    %peakHeights(iPeak) = [];
-    %peakFreqsPerBand{iBand}(iPeak) = [];    
   end
     
+  subplot(nPeaks,1,iPeak);
+  
+  %uncomment the following two lines to use a white vector to set
+  %the max radius of the plot
+  %compass(-1.5+0*i,'w');
+  %hold on;
+  
+  compass(vecsThisPeak);
+  %hold on;
+  %compass(1,'r');
+  
+  camorbit(90,180);
+  
+  axPos = get(gca,'position');
+  labelAxPos=[.2 axPos(2) .1 axPos(4)];
+  labelAx = axes('position',labelAxPos,'visible','off');
+  resonLabel = sprintf('%.2f Hz',resonFreqs(peakIdxs(iPeak)));
+  text(0.5,0.5,resonLabel,'fontsize',12,'fontweight','bold');
+  
 end %for iPeak
   
-peakHeights(~keepPeaks) = [];
-peakFreqsPerBand{plotBand}(~keepPeaks) = [];
-peakHeightsPerBand{plotBand,1} = peakHeights;
-
-cohStruct = ensemble_init_data_struct;
-cohStruct.vars = {'peakFreqPerBand','cohPerPeakPerBand','peakHeightsPerBand'};
-cohCols = set_var_col_const(cohStruct.vars);
-
-cohStruct.data{cohCols.peakFreqPerBand} = peakFreqsPerBand;
-cohStruct.data{cohCols.cohPerPeakPerBand} = cohPerPeak;
-cohStruct.data{cohCols.peakHeightsPerBand} = peakHeightsPerBand;
-
-outData = cohStruct;
 
