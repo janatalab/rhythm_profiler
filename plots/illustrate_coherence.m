@@ -6,7 +6,7 @@
 %
 % Author: Stefan Tomic 07/28/2009
 
-%close all
+close all
 
 %change mat file here to load data from a different trial
 dataPath = '/data2/rhythm/rhythmic_tapping_v2/project_data/resp_rp2';
@@ -152,15 +152,13 @@ for iPeak = 1:nPeaks
   %there have been a few instances where only the first onset was
   %assigned to a given peak. We are throwing these peaks out
   if(~isempty(vecsThisPeak))
-    cohPerPeak{plotBand}(end+1,1) = coherence(vecsThisPeak,refVec);
+    cohThisPeak = coherence(vecsThisPeak,refVec);
   else
     keepPeaks(iPeak) = 0;
   end
     
   subplot(nPeaks,1,iPeak);
   
-  %uncomment the following two lines to use a white vector to set
-  %the max radius of the plot
   compass(-1.5+0*i,'w');
   hold on;
   
@@ -176,8 +174,9 @@ for iPeak = 1:nPeaks
   labelAxPos=[.2 axPos(2) .1 axPos(4)];
   labelAx = axes('position',labelAxPos,'visible','off');
   resonLabel = sprintf('%.2f Hz',resonFreqs(peakIdxs(iPeak)));
-  text(0.5,0.5,resonLabel,'fontsize',12,'fontweight','bold');
-  
+  cohLabel = sprintf('Coherence: %.2f',cohThisPeak);
+  text(0.85,0.5,resonLabel,'fontsize',12,'horizontalalignment','right','fontweight','bold');
+  text(0.85,0.43,cohLabel,'fontsize',12,'horizontalalignment','right','fontweight','bold');
 end %for iPeak
   
 
