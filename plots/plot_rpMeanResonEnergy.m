@@ -91,15 +91,22 @@ for idx = 1:nData
       axes(ax);
       lineH(idx) = jbfill([1:length(meanEnergy)],meanEnergy'+stdEnergy',...
 	     meanEnergy'-stdEnergy',lspec,'k',1,0.5);
+     hold on
+     plot(ax,meanEnergy,'color',lspec,'lineWidth', 1);
     end
   else
-    lineH(idx) = plot(ax,meanEnergy,'color',lspec,'lineWidth',.5);
+    lineH(idx) = plot(ax,meanEnergy,'color',lspec,'lineWidth',1);
   end
 
   hold on;
   
   if(ismember('stdEnergy',params.perform))
-    setYLim(1) = min(setYLim(1),0.8.*min(meanEnergy - stdEnergy));
+    lowerBound = min(meanEnergy - stdEnergy);
+    if sign(lowerBound) < 1
+      setYLim(1) = min(setYLim(1),1.2*lowerBound);      
+    else
+      setYLim(1) = min(setYLim(1),0.8.*lowerBound);
+    end
     setYLim(2) = max(setYLim(2),1.2.*max(meanEnergy + stdEnergy));
   else
     setYLim(1) = min(setYLim(1),0.8.*min(meanEnergy));

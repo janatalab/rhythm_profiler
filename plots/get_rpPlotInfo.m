@@ -49,7 +49,25 @@ resEnergy = thisRP.data{thisRPCols.resonatorEnergy};
 if(~isfield(params,'timeLim'))
   stdEnergy = thisRP.data{thisRPCols.stdResonatorEnergy};
   meanEnergy = thisRP.data{thisRPCols.meanResonatorEnergy};
-  peakInfo = thisRP.data{thisRPCols.peakInfo};
+  
+  try
+    peakInfo = thisRP.data{thisRPCols.peakInfo};
+  catch
+    peakInfo = [];
+  end
+  
+  if isempty(peakInfo)
+    peakInfo = get_resonPeakInfo(thisRP.data{thisRPCols.meanResonatorEnergy},...
+      resonFreqs,params.peakFinder);
+    peakInfo = ensemble_tree2datastruct(peakInfo);
+    %temporary solution until ensemble_tree2datastruct is fixed
+    if(iscell(peakInfo.data{1}))
+      for iTmp = 1:length(peakInfo.data)
+        peakInfo.data{iTmp} = peakInfo.data{iTmp}{1};
+      end
+    end
+  end
+  
   peakInfoCols = set_var_col_const(peakInfo.vars);
   peakIdxs = peakInfo.data{peakInfoCols.peakIdxs};
 
