@@ -6,11 +6,16 @@
 %
 % Author: Stefan Tomic 07/28/2009
 
-close all
+%close all
 
 %change mat file here to load data from a different trial
 dataPath = '/data2/rhythm/rhythmic_tapping_v2/project_data/resp_rp2';
 loadData = load(fullfile(dataPath,'03daj88201_2774_trial_22.mat'));
+
+
+plotPath = '/data2/groove/smpc09/plots';
+plotFname = 'coherence_illustration.ps';
+plotFullPath = fullfile(plotPath,plotFname);
 
 
 plotBand = 1;
@@ -37,8 +42,6 @@ onsetExpectByBand = expectErrorStruct.onsetExpectByBand;
 onsetHeightByBand = expectErrorStruct.onsetHeightByBand;
 
 resonFreqs = rp.resonatorFreqs;
-
-
 
 MPP = rp.meanResonatorEnergy;
 MPPPeaks = rp.peakInfo.peakFreq;
@@ -133,6 +136,8 @@ for iPeak = 1:nPeaks
 
 end
 
+print(plotFullPath,'-dpsc2','-painters');
+
 
 
 figure;
@@ -179,4 +184,4 @@ for iPeak = 1:nPeaks
   text(0.85,0.43,cohLabel,'fontsize',12,'horizontalalignment','right','fontweight','bold');
 end %for iPeak
   
-
+print(plotFullPath,'-dpsc2','-painters','-append');
