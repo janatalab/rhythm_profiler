@@ -122,7 +122,7 @@ for iPeak = 1:nPeaks
   
   
   if(iPeak == nPeaks)
-    set(gca,'xtick',timeTicks,'xticklabels',timeTickLabels,'ytick',[],'xlim',setXLims,'ylim',setYLims); 
+    set(gca,'xtick',timeTicks,'xticklabel',timeTickLabels,'ytick',[],'xlim',setXLims,'ylim',setYLims); 
     xlabel('Time (s)');
     ylabel('Amplitude');
   else
@@ -136,6 +136,7 @@ for iPeak = 1:nPeaks
 
 end
 
+fprintf('Printing figure to: %s\n', plotFullPath);
 print(plotFullPath,'-dpsc2','-painters');
 
 
