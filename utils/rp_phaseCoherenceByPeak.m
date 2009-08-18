@@ -12,12 +12,6 @@ function outData = rp_phaseCoherenceByPeak(inData,params)
 % Author: Stefan Tomic 04/30/2009
 
 
-
-
-
-params.metricLevelToleranceMs = 100;
-mlToleranceSec = params.metricLevelToleranceMs./1000;
-
 rp = inData;
 if(iscell(rp))
   rp = rp{1};

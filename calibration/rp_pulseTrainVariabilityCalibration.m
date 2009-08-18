@@ -98,16 +98,9 @@ if(WRITE2TABLE)
 end
 
 for iaccent = 1:nAccent
-  %for ivmMode = 1:nVmModes
-  ivmMode = 1;
-    for istd = 1:nStd
+  for istd = 1:nStd
 
     
-      useVmModes = vmModes(ivmMode,:);
-      vmParams = cell2struct(useVmModes,vmFields,2);
-      
-      
-      
     accentStruct = accentPatterns{iaccent};
     accentStructLen = length(accentStruct);
     
@@ -157,7 +150,7 @@ for iaccent = 1:nAccent
     params{1}.ipem.rp.resonatorBank.freqLimits = [0.25 10.0];
     %params{1}.ipem.rp.resonatorBank.spacingFactor =0.125;
     params{1}.ipem.rp.Fs = Fs;
-    params{1}.ipem.rp.vmExpect = vmParams;
+    %params{1}.ipem.rp.vmExpect = vmParams;
     
     
     
@@ -165,14 +158,9 @@ for iaccent = 1:nAccent
     ipemOutCols = set_var_col_const(ipemOut.vars);
     rp = ipemOut.data{ipemOutCols.rp};
 
-    %add von Mises calculations to the rp struct
-    %vmExpectData = rp_vonMisesExpectCalc(rp,params{1}.ipem.rp);
-    %rp = rp_phaseCoherenceByPeak(rp,params{1});
-    
-    
     %params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
     %	    'findPeaks','ratioProb','showInput'};
-    %	    %'resonOutput',
+    	    %'resonOutput',
     params{2}.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy', ...
     	    'findPeaks','showInput','expectProbByOnset'};
     params{2}.freqLegend = 1;
@@ -234,6 +222,7 @@ for iaccent = 1:nAccent
       plot_rhythmProfile(inData,params{2});
     end
     
+    %{
     if(PLOT_VMFULFILL)
       vmParams.subplotNum = (istd-1)*(length(accentPatterns)) + iaccent;
       vmParams.savePlot = 1;
@@ -248,6 +237,7 @@ for iaccent = 1:nAccent
       vmParams.title = sprintf('(%s, std = %2d ms) %s',freqString,devMs,metricLabels{iaccent});
       plot_vmMetricFulfillment(inData,vmParams);
     end
+    %}
     
     if(PLOT_SUMRESONS)
       vmParams.subplotNum = (istd-1)*(length(accentPatterns)) + iaccent;
