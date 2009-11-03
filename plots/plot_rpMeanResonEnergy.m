@@ -59,8 +59,10 @@ for idx = 1:nData
   
   if(isfield(params,'lineSpec'))
     lspec = params.lineSpec{idx};
-  else
+  elseif(strcmp(plotStyle,'fill'))
     lspec = [0 0 1];
+  elseif(strcmp(plotStyle,'line'))
+    lspec = 'k-';
   end
  
   get_rpPlotInfo;
@@ -86,7 +88,7 @@ for idx = 1:nData
      switch(plotStyle)
      case 'line'      
       errorbar(ax,meanEnergy,stdEnergy,lspec,'color',colorSpec);
-      lineH(idx) = plot(ax,meanEnergy,'color',lspec,'lineWidth',.5);
+      lineH(idx) = plot(ax,meanEnergy,lspec,'lineWidth',.5);
      case 'fill'
       axes(ax);
       lineH(idx) = jbfill([1:length(meanEnergy)],meanEnergy'+stdEnergy',...

@@ -6,11 +6,8 @@ function outData = rp_temporalExpectationError(varargin)
 % INPUTS:
 % tag, value pairs:
 %      'rp': the rhythm profile to process
-%   'BList': A Cell array of vectors, where each vector contains the
-%            numerator coefficients of a reson filter
-%   'AList': A Cell array of vectors, where each vector contains the
-%            denominator coefficients of a reson filter
-%  'params': params struct for this function
+%
+%      relevant params:
 %            params.peakfinder.thresh: threshold for the peak
 %                                      finder for finding onsets
 %            params.Fs: the sampling rate of the reson filters
@@ -26,10 +23,6 @@ for iArg = 1:2:nargin
   switch(varargin{iArg})
    case('rp')
     rp = varargin{iArg+1};
-   case('BList')
-    BList = varargin{iArg+1};
-   case('AList')
-    AList = varargin{iArg+1};
    case('inputSig')
     inputSig = varargin{iArg+1};
   end
@@ -67,12 +60,26 @@ nResons = length(rp.resonatorFreqs);
 nBanks = size(rp.resonatorOut,1);
 nTimeSamps = size(rp.resonatorOut,3);
 
+if(~isempty(params.timeLimSecs))
+  timeStartSamps = round(params.timeLimSecs(1)*params.Fs) + 1;
+  timeStopSamps = min(round(params.timeLimSecs(2)*params.Fs),nTimeSamps);
+else
+  timeStartSamps = 1;
+  timeStopSamps = nTimeSamps;
+end
+
 nFrames = size(rp.resonatorEnergy,2);
-onsetTimesAll = [];
 
 for iBank = 1:nBanks
   warning off
-  onsetTimesSamps = find_peaks(inputSig(iBank,:),params.temporalExpect.onsetDetect.thresh);
+  onsetTimesSamps = find_peaks(inputSig(iBank,timeStartSamps:timeStopSamps),params.temporalExpect.onsetDetect);
+    
+  %Some ANI signals have exhibited large spikes at the beginning of the signal
+  %where there probably shouldn't have been one. So, for now, params should be
+  %set to throw out the first detected onset for audio files until this problem is solved.
+  if(isfield(params.temporalExpect,'throwOutFirstOnset') && params.temporalExpect.throwOutFirstOnset)
+    onsetTimesSamps(1) = [];
+  end
   
   onsetHeights = peak_heights('signal',inputSig(iBank,:),'peakIdxs',onsetTimesSamps);
   pwParams.calcAt = 'base';
@@ -101,10 +108,11 @@ for iBank = 1:nBanks
 
   lowestReson = resonPeakInfo.peakFreq(1);
   peakIdxs = resonPeakInfo.peakIdxs;
-  rmsFrameSize = 1./lowestReson;
-  %params.predictCurrentOutput.rmsFrameSize = rmsFrameSize;
-  onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,'peakIdxs',peakIdxs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,'onsetBorders',onsetBorders,'BList',BList,'AList',AList,'params',params);
- 
+
+  onsetExpectMtx = rp_predictCurrentOutput('resonBankOut',resonBankOut,'resonFreqs',rp.resonatorFreqs,...
+					   'peakIdxs',peakIdxs,'Fs',params.Fs,'onsetTimesSamps',onsetTimesSamps,...
+					   'onsetBorders',onsetBorders,'params',params);
+  
   onsetExpectMtxList{iBank} = onsetExpectMtx;
 
 end %for iBank

@@ -22,10 +22,6 @@ for iArg = 1:2:nargin
     onsetTimesSamps = varargin{iArg+1};
    case 'onsetBorders'
     onsetBorders = varargin{iArg+1};
-   case 'BList'
-    BList =  varargin{iArg+1};
-   case 'AList'
-    AList = varargin{iArg+1};
    case 'params'
     params = varargin{iArg+1};
   end
@@ -45,6 +41,12 @@ Fs = params.Fs;
 
 fprintf(fid,['\nCalculating reson filter predictor, assuming on no' ...
 	     ' future input. Onset # ']);
+
+%obtain BList and AList (reson filter transfer functions). This can be 
+%done simply by calling resonatorBanks and feeding a single impulse to it.
+hfunc_resonatorBanks = resonatorBanks(params.resonatorBank.method);
+[dummyResonOut,dummyResonFreqs,BList,AList] = ...
+      hfunc_resonatorBanks(1,params.resonatorBank);
 
 for iOnset = 1:nOnsets
     
@@ -103,9 +105,12 @@ for iOnset = 1:nOnsets
       end
       
       expectSeries = [resonBankOutNoOnset expectValue];
+      %testing whether using portion of signal after last onset produces better results
+      %expectSeries = expectSeries(:,onsetTimesSamps(iOnset-1)+1:end);
       hilbertExpectSeries = hilbert(expectSeries')';
       onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,onsetTimesSamps(iOnset));
-     
+      %evalIdx = onsetTimesSamps(iOnset) - onsetTimesSamps(iOnset-1) +1;
+      %onsetExpectMtx(:,iOnset) = hilbertExpectSeries(:,evalIdx);
      otherwise
       error('This function currently only supports reson_z filters.');
       

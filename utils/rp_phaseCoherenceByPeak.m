@@ -1,4 +1,4 @@
-function outData = rp_phaseCoherenceByPeak(inData,params)
+function outData = rp_phaseCoherenceByPeak(inData)
 % Calculates coherence among vectors close to important angles (0,pi,pi/2,pi/3,pi,4) etc.
 % 
 % outData = rp_phaseCoherence(inData,params)
@@ -18,6 +18,7 @@ if(iscell(rp))
 end
 
 rp = ensemble_datastruct2tree(rp);
+params = rp.params.rp;
 
 expectErrorStruct = rp.expectationError;
 onsetTimesSampsByBand = expectErrorStruct.onsetTimesSampsByBand;
@@ -37,12 +38,22 @@ refVec = complex(1,0);
 
 peakPhaseTolerances = pi/6;
 
+nTimeSamps = size(rp.resonatorBandEnergy,3);
+if(~isempty(params.timeLimSecs))
+  timeStartSamps = round(params.timeLimSecs(1) * params.Fs) + 1;
+  timeStopSamps = min(round(params.timeLimSecs(2) * params.Fs),nTimeSamps);
+else
+  timeStartSamps = 1;
+  timeStopSamps = size(rp.resonatorOut,3);
+end
+
 for iBand = 1:nBands
   
-  MMPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,:)),2);
+  %recalculate MPP over specified time limit
+  MPPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,timeStartSamps:timeStopSamps)),2);
   fpParams = params.resonatorBank.peakFinder;
-  peakIdxs = find_peaks(MMPThisBand,fpParams);
-  peakHeights = peak_heights('signal',MMPThisBand,'peakIdxs',peakIdxs);
+  peakIdxs = find_peaks(MPPThisBand,fpParams);
+  peakHeights = peak_heights('signal',MPPThisBand,'peakIdxs',peakIdxs);
   if(isfield(fpParams,'minPeakHeight'))
     goodPeakMask = peakHeights >= fpParams.minPeakHeight;
     peakIdxs = peakIdxs(goodPeakMask);
@@ -83,9 +94,12 @@ for iBand = 1:nBands
     peakRefIdx = peakIdxs(iPeak);
     
     vecsThisPeak = squeeze(onsetExpectThisBand(peakRefIdx,find(mlAssign(iPeak,:))))';
-    %get rid of the first onset since there really should be no
-    %expectation here
-    vecsThisPeak(1) = [];
+    
+    %we were throwing away first onset here, but this is now being done in 
+    %rp_temporalExpectationError. The choice of whether or not to keep the 
+    %first onset will need to be revisited. It is being thrown out now for
+    %stims, since ANIs have been found with unusually high peaks.
+    %vecsThisPeak(1) = [];
     
     %there have been a few instances where only the first onset was
     %assigned to a given peak. We are throwing these peaks out
