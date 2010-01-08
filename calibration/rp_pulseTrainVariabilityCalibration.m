@@ -6,7 +6,8 @@ globals = rhythmTap_globals;
 filtType = 'reson';
 
 CONVOLVE_WITH_GAUSSIAN = 0;
-PLOT_PERIODICITY_SURF = 1;
+PLOT_VMDISTRIBUTION = 1;
+PLOT_PERIODICITY_SURF = 0;
 PLOT_VMFULFILL = 0;
 PLOT_SUMRESONS = 0;
 WRITE2TABLE = 0;
@@ -18,7 +19,9 @@ USEBARFREQ = 1;
 
 pulseFreq = 6; %pulse frequency in Hz.
 %barFreq = 0.4749;
-barFreq = 1;
+%barFreq = 2;
+barFreqList = [1.1:0.05:1.5];
+%barFreqList = 1.15;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -28,11 +31,14 @@ if(strcmp(filtType,'comb'))
 						'comb',...
 						'input_type','aud','gain_type','constant',...
 						'perform_mulawCompression',0);
+						
 elseif(strcmp(filtType,'reson'))  
   globals.respIPEMParams.rp = rp_paramGroups_v2('param_group',...
 						'reson_filterQSpacing_periodBasedDecay',...
 						'input_type','aud','gain_type','beta_distribution',...
 						'perform_mulawCompression',0);
+  globals.respIPEMParams.rp.resonatorBank.spacingHz = .025;
+  %'reson_filterQSpacing_periodBasedDecay',...'reson_linearSpacing_periodBasedDecay',...
 end
 
 dur = 30.01;
@@ -45,17 +51,18 @@ noteOccurrence = {[4 0 2 0 3 0 2 0 3 0 2 0],...
 		  [5 0 2 0 3 0 2 0 4 0 2 0 3 0 2 0],...
 		  [4 0 2 0 2 0 3 0 2 0 2 0]};
 
-gaussFWHMms = 50;
+gaussFWHMms = 100;
 gaussFWHMsamps = floor(gaussFWHMms/1000*Fs);
 
 gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 
 %standard deviations in ms
 %stdDevsMs = [0 20 40 60 80];
-stdDevsMs = [0 20 40 80];
-%stdDevsMs = 0;
+%stdDevsMs = [0 20 40 80];
+%stdDevsMs = [0 10 20 40 60 80];
+stdDevsMs = 0;
 
-metricLabels = {'isochronous','meter = 6/8','isofast','meter = 3/4','meter = 4/4','accent every other','alternate23'};
+metricLabels = {'isochronous','meter = 6/8','isofast','meter = 3/4','meter = 4/4','accent every other','alternate23','isochronous'};
 %'meter = 3/4','accent every other','alternate23'
 %metricLabels = {'hpbwReson_8thpower_morefilts'};
 
@@ -67,7 +74,8 @@ accentPatterns = { [1 0 0 0 0 0 0 0],...
 		   [1  0 .33  0 .33  0 .66   0  .33  0 .33  0],...
 		   [1  0 .25  0 .5   0 .25   0  .75  0  .25 0 .5  0 .25 0],...
 		   [1 0 0 0 .5 0 0 0],... 
-		   [1 .66 1  .66  .66  ] };
+		   [1 .66 1  .66  .66  ],...
+		   [1]};
  
 
 
@@ -81,7 +89,7 @@ vmModes = {'no','k=4';...
 
 nVmModes = size(vmModes,1);
 
-useAccentIdxs = [1];
+useAccentIdxs = [8];
 metricLabels = metricLabels(useAccentIdxs);
 accentPatterns = accentPatterns(useAccentIdxs);
 
@@ -101,9 +109,19 @@ if(WRITE2TABLE)
   end
 end
 
+%set up the figure for PLOT_VMDISTRIBUTION
+if(PLOT_VMDISTRIBUTION)
+  plotDistParams.figH = figure;
+  set(gcf,'position',[100 100 800 1000],'paperposition',[0.25 0.5 8 10]);
+end
+
+nBarFreq = length(barFreqList);
+for iBarFreq = 1:nBarFreq
 for iaccent = 1:nAccent
   for istd = 1:nStd
 
+    
+    barFreq = barFreqList(iBarFreq);
     
     accentStruct = accentPatterns{iaccent};
     accentStructLen = length(accentStruct);
@@ -111,9 +129,9 @@ for iaccent = 1:nAccent
     devMs = stdDevsMs(istd);
     
     if(USEBARFREQ)
-      freqString = sprintf('Bar=%.1f Hz',barFreq);
+      freqString = sprintf('Bar=%.2f Hz',barFreq);
     else
-      freqString = sprintf('Pulse=%.1f Hz',pulseFreq);
+      freqString = sprintf('Pulse=%.2f Hz',pulseFreq);
     end
     
     metricFileLabels = regexprep(metricLabels,'[\s=/]','');
@@ -128,7 +146,12 @@ for iaccent = 1:nAccent
       figTitle = sprintf('%s (%s, no deviation) %s',titlestub,freqString,metricLabels{iaccent});
     end
     
+    %setting up firstOnsetSamp and lastOnsetSamp so that they are not too close
+    %to the beginning or end of the signal. That way, when we vary the onset
+    %times, we aren't in danger of going beyond the signal length.
+    firstOnsetSamp = 100;
     sigLen = round(dur*Fs);
+    lastOnsetSamp = sigLen - 100;
     sig = zeros(sigLen,1);
 
     if(USEBARFREQ)
@@ -138,18 +161,20 @@ for iaccent = 1:nAccent
     end
     pulsePeriodSamps = round(pulsePeriod*Fs);    
     
-    onsetTimesSamps = [1:pulsePeriodSamps:sigLen];
+    onsetTimesSamps = [firstOnsetSamp:pulsePeriodSamps:lastOnsetSamp];
     numOnsets = length(onsetTimesSamps);
     
     if(devMs ~= 0)
       onsetDevsMs = randn(1,numOnsets-1).*devMs;
       onsetDevsSamps = round(onsetDevsMs./1000.*Fs);
+      onsetDevsMs = [0 onsetDevsMs];
+      onsetDevsSamps = [0 onsetDevsSamps];
     else
-      onsetDevsMs = zeros(1,numOnsets-1);
-      onsetDevsSamps = zeros(1,numOnsets-1);
+      onsetDevsMs = zeros(1,numOnsets);
+      onsetDevsSamps = zeros(1,numOnsets);
     end
     
-    onsetTimesSamps(2:end) = onsetTimesSamps(2:end) + onsetDevsSamps;
+    onsetTimesSamps = onsetTimesSamps + onsetDevsSamps;
     onsetTimesSamps(find(onsetTimesSamps > sigLen)) = [];
     
     numOnsets = length(onsetTimesSamps);
@@ -167,6 +192,7 @@ for iaccent = 1:nAccent
     params{1}.ipem = globals.respIPEMParams;
     
     %construct a cell array of strings (displayDevsCell) to use for debug labels
+    %this will be used to display actual the actual timing deviation for each onset
     displayDevs = onsetDevsMs(find(accentIndices == 1));
     displayDevsStr = strrep(num2str(displayDevs,'%.2f,'),' ','');
     displayDevsCell = regexp(displayDevsStr,'([^\,]+),','tokens');
@@ -175,12 +201,12 @@ for iaccent = 1:nAccent
       displayDevsCell{iCell} = displayDevsCell{iCell}{1};
     end
     params{1}.ipem.rp.temporalExpect.debugLabels = displayDevsCell;
-    params{1}.ipem.rp.temporalExpect.debugPlotFname = sprintf('%s_%s_%dms_dev_%s_conv_debug.ps',fstub,freqFileLabel,devMs,metricFileLabels{iaccent}); 
+    params{1}.ipem.rp.temporalExpect.debugPlotFname = sprintf('%s_%s_%dms_dev_%s_debug.ps',fstub,freqFileLabel,devMs,metricFileLabels{iaccent}); 
     params{1}.ipem.rp.temporalExpect.debugPlotFPath = plotPath;
     params{1}.ipem.rp.temporalExpect.debugPlotTitle = figTitle;
     params{1}.ipem.glob.save_calc = {};
     
-    params{1}.ipem.rp.resonatorBank.gainType = 'prenorm_weighted';
+    %params{1}.ipem.rp.resonatorBank.gainType = 'prenorm_weighted';
     params{1}.ipem.rp.resonatorBank.peakFinder.thresh = 0;
     %params{1}.ipem.rp.resonatorBank.peakFinder.perform = {};
     params{1}.ipem.rp.resonatorBank.peakFinder.minPeakHeight = 0.05;
@@ -189,18 +215,24 @@ for iaccent = 1:nAccent
     params{1}.ipem.rp.resonatorBank.freqLimits = [0.25 10.0];
     
     %TESTING
-    %params{1}.ipem.rp.resonatorBank.spacingFactor =0.125;
+    %params{1}.ipem.rp.resonatorBank.spacingFactor =0.25;
     
     params{1}.ipem.rp.Fs = Fs;
     %params{1}.ipem.rp.vmExpect = vmParams;
     
-    params{1}.ipem.rp.perform.calcTemporalExpect = 1;
+    %TEMP
+    params{1}.ipem.rp.perform.calcOnsetInfo = 1;
+    params{1}.ipem.rp.perform.calcComplexOutput = 1;
     params{1}.ipem.rp.perform.calcVonMises = 1;
-
+    params{1}.ipem.rp.perform.interpMPP = 1;
+    
+    
+    
     ipemOut = ipem_proc_series(aud_st,params{1}.ipem);
     ipemOutCols = set_var_col_const(ipemOut.vars);
     rp = ipemOut.data{ipemOutCols.rp};
 
+    
     params{2}.perform = {'resonEnergy','meanEnergy','stdEnergy', ...
     	    'findPeaks','ratioProb','showInput'};
     	    %'resonOutput',
@@ -219,7 +251,7 @@ for iaccent = 1:nAccent
     params{2}.plotMeans = 1;
     params{2}.color = 0;
     params{2}.savePlot = 1;
-  %temporary fix for ensemble_datastruct2tree
+    %temporary fix for ensemble_datastruct2tree
     params{2}.separatePages = 0;
     params{2}.peakFinder.thresh = 0;
     %params{2}.peakFinder.perform = {};
@@ -236,11 +268,8 @@ for iaccent = 1:nAccent
     endOnsetToPlot = startOnsetToPlot+actualStructLen*5-1;
     params{2}.expectProbByOnset.onsetsToPlot = [startOnsetToPlot:endOnsetToPlot];
     %params{2}.expectProbByOnset.onsetsToPlot = [1:(length(find(sig > 0))-1)];
- 
-
-  
     params{2}.fig.title = figTitle;
-    params{2}.plotFname = sprintf('%s_%s_%dms_dev_%s_norm_resp.ps',fstub,freqFileLabel,devMs,metricFileLabels{iaccent});
+    params{2}.plotFname = sprintf('%s_%s_%dms_dev_%s.ps',fstub,freqFileLabel,devMs,metricFileLabels{iaccent});
     
     if(iscell(rp))
       inData{1} = rp{1};
@@ -248,6 +277,7 @@ for iaccent = 1:nAccent
       inData{1} = rp;
     end
     inData{2} = aud_st;
+    
     
     if(PLOT_PERIODICITY_SURF)
       plot_rhythmProfile(inData,params{2});
@@ -271,6 +301,20 @@ for iaccent = 1:nAccent
       plot_vmMetricFulfillment(inData,vmParams);
     end
     
+    if(PLOT_VMDISTRIBUTION)
+      nPlots = nBarFreq*nStd;
+      iPlot = (iBarFreq-1)*nStd + istd;
+      figure(plotDistParams.figH);
+      if(iaccent == 1 && istd == 1 && iBarFreq == 1)
+	axes('position',[0 .95 1 .05],'visible','off');
+	%text(0.5,0.5,sprintf('Timing Dev Dist %d Hz',barFreq),'fontweight','bold','fontsize',16,'horizontalalignment','center');
+	text(0.5,0.5,'exponential spacing (interpolated)','fontweight','bold','fontsize',16,'horizontalalignment','center');
+      end
+      plotDistParams.axHandle = subplot(nPlots,1,iPlot);
+      plotDistParams.titleText = sprintf('%s, dev:%d, accent: %s',freqFileLabel,devMs,metricFileLabels{iaccent});
+      
+      plot_vmDistribution(inData,plotDistParams);
+    end
     
     if(PLOT_SUMRESONS)
       vmParams.subplotNum = (istd-1)*(length(accentPatterns)) + iaccent;
@@ -304,13 +348,12 @@ for iaccent = 1:nAccent
       kt_params.plotFname = params{2}.plotFname;
       kt_params.plotPath = plotPath;
       rmgc_plot_ktest(rp,kt_params);
-      
-      
     end
 
     
     end
   %end
+end
 end
 
 if(WRITE2TABLE)

@@ -17,7 +17,7 @@
 %run, since they require different parameters to the model and
 %parameters are set at the top level.
 rp_proc_dir = '/home/stefan/btb_analysis_dir/';
-input_file_pattern = '*.csv';
+input_file_pattern = '*.mp3';
 
 %Remove the comment marks on the following two lines
 %and set your path if you are running btb on midi files instead of
@@ -35,23 +35,23 @@ params.ipem.ani  = ani_paramGroups;
 
 switch lower(ext)
  case {'.wav','.mp3'}
-  params.ipem.rp   = rp_paramGroups('param_group',...
-				    'reson_filterQSpacing_periodBasedDecay',...
-				    'input_type','ani','gain_type','beta_distribution',...
-				    'perform_mulawCompression',0);
+  params.ipem.rp   = rp_paramGroups_v2('param_group',...
+				       'reson_filterQSpacing_periodBasedDecay',...
+				       'input_type','ani','gain_type','beta_distribution');
+  
   params.ipem.glob.process = {'ani','rp'};
   %note that the peak ratio bargraph plot is disabled for audio
   %files since the automated procedure for finding peak ratios was mainly
   %tested and used with MIDI files. In order to use the peak ratio
   %plotter, simply add 'peakRatios' to params.plot.perform.
-  params.plot.perform = {'plotBands','plotBandEnergies', 'resonEnergy','meanEnergy','stdEnergy','findPeaks'};
+  params.plot.perform = {'plotBands','plotBandOutputs','plotBandEnergies', 'resonEnergy','meanEnergy','stdEnergy','findPeaks'};
   params.plot.inputSigType = 'wvf'; 
  
  case {'.mid','.midi'}
-  params.ipem.rp   = rp_paramGroups('param_group',...
-				    'reson_filterQSpacing_periodBasedDecay',...
-				    'input_type','aud','gain_type','beta_distribution',...
-				    'perform_mulawCompression',0);
+  params.ipem.rp   = rp_paramGroups_v2('param_group',...
+				       'reson_filterQSpacing_periodBasedDecay',...
+				       'input_type','aud','gain_type','beta_distribution')
+				    
   params.ipem.glob.process = {'rp'};
 
   params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','peakRatios','showInput'};
@@ -59,11 +59,10 @@ switch lower(ext)
   
  case {'.csv'}
   params.Fs = 30; %make sure to set this to the appropriate Fs for your csv file
-  params.ipem.rp = rp_paramGroups('param_group',...
-				    'reson_filterQSpacing_periodBasedDecay',...
-				    'input_type','aud','gain_type','beta_distribution',...
-				    'perform_mulawCompression',0,...
-				    'Fs',params.Fs);
+  params.ipem.rp = rp_paramGroups_v2('param_group',...
+				     'reson_filterQSpacing_periodBasedDecay',...
+				     'input_type','aud','gain_type','beta_distribution',...
+				     'Fs',params.Fs);
   params.ipem.rp.invertInputSig = 0;
   params.ipem.glob.process = {'rp'};
   params.plot.perform = {'resonOutput','resonEnergy','meanEnergy','stdEnergy','findPeaks','peakRatios','showInput'};
@@ -75,7 +74,7 @@ end
 
 %set this to a list of calculations you wish to force recalculation
 %(saved calculations with identical parameters will be overwritten)
-params.ipem.glob.force_recalc = {'ani','rp'};
+params.ipem.glob.force_recalc = {};
 
 %list of calculations that will be saved. Currently set to all
 %processed calculations
@@ -92,8 +91,8 @@ params.plot.legendParams.maxHz = 5;
 params.plot.legendParams.numKeys = 7;
 params.plot.colorbar = 1;
 params.plot.savePath = rp_proc_dir;
-params.plot.timeTickRes = 2.0;
-params.plot.timeLim = [0 15];
+params.plot.timeTickRes = 30.0;
+%params.plot.timeLim = [0 15];
 params.plot.numResonTicks = 15;
 params.plot.maxResonFreqPlot = 10;
 params.plot.plotMeans = 1;

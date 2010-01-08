@@ -50,7 +50,7 @@ if(~isempty(peakIdxs))
 
   %get base peak widths
   pwParams.calcAt = 'base_high';
-  pwParams.interpolate.perform = 'spline';
+  pwParams.interpolate.method = 'spline';
   [baseFreqs] = peak_widths('signal',meanEnergy,'peakIdxs',peakIdxs,'xVals',resonFreqs,'params',pwParams);
 
   baseWidths = baseFreqs(2:2:end) - baseFreqs(1:2:end-1);

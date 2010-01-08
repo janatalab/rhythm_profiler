@@ -140,10 +140,10 @@ for iBand = 1:nBands
         [pth,fstub,ext] = fileparts(params.plotFname);
 	if(params.separatePages)
 	  pfname = [fstub plotName ext];
-	  print('-dpsc',fullfile(params.savePath,pfname));
+	  print(params.format,fullfile(params.savePath,pfname));
 	else
 	  pfname = [fstub ext];
-	  print('-dpsc','-append',fullfile(params.savePath,pfname));
+	  print(params.format,'-append',fullfile(params.savePath,pfname));
 	end
 	disp(sprintf('Writing new plots to %s\n\n',fullfile(params.savePath,pfname)));  
 	close(figH);

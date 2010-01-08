@@ -80,7 +80,7 @@ if(~isfield(params,'bands') || ~isfield(params.bands,'climMode'))
 end
 
 if(~isfield(params,'format'))
-  params.format = '-dpsc';
+  params.format = '-dpsc2';
 end
 
 if(isempty(thisRP))
