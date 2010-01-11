@@ -21,7 +21,7 @@ pulseFreq = 6; %pulse frequency in Hz.
 %barFreq = 0.4749;
 %barFreq = 2;
 barFreqList = [1.1:0.05:1.5];
-%barFreqList = 1.15;
+%barFreqList = 1.10;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -60,6 +60,7 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 %stdDevsMs = [0 20 40 60 80];
 %stdDevsMs = [0 20 40 80];
 %stdDevsMs = [0 10 20 40 60 80];
+%stdDevsMs = [60 80];
 stdDevsMs = 0;
 
 metricLabels = {'isochronous','meter = 6/8','isofast','meter = 3/4','meter = 4/4','accent every other','alternate23','isochronous'};
@@ -308,7 +309,7 @@ for iaccent = 1:nAccent
       if(iaccent == 1 && istd == 1 && iBarFreq == 1)
 	axes('position',[0 .95 1 .05],'visible','off');
 	%text(0.5,0.5,sprintf('Timing Dev Dist %d Hz',barFreq),'fontweight','bold','fontsize',16,'horizontalalignment','center');
-	text(0.5,0.5,'exponential spacing (interpolated)','fontweight','bold','fontsize',16,'horizontalalignment','center');
+	text(0.5,0.5,'exponential spacing (resampled)','fontweight','bold','fontsize',16,'horizontalalignment','center');
       end
       plotDistParams.axHandle = subplot(nPlots,1,iPlot);
       plotDistParams.titleText = sprintf('%s, dev:%d, accent: %s',freqFileLabel,devMs,metricFileLabels{iaccent});
