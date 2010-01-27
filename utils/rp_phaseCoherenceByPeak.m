@@ -20,10 +20,8 @@ end
 rp = ensemble_datastruct2tree(rp);
 params = rp.params.rp;
 
-expectErrorStruct = rp.expectationError;
-onsetTimesSampsByBand = expectErrorStruct.onsetTimesSampsByBand;
-onsetExpectByBand = expectErrorStruct.onsetExpectByBand;
-onsetHeightByBand = expectErrorStruct.onsetHeightByBand;
+onsetTimesSampsByBand = rp.onsetInfo.onsetTimesSampsByBand;
+onsetExpectByBand = rp.complexExpectAtOnsets;
 
 resonFreqs = rp.resonatorFreqs;
 Fs = rp.Fs;
@@ -63,9 +61,6 @@ for iBand = 1:nBands
   peakFreqsPerBand{iBand} = resonFreqs(peakIdxs);
   nPeaks = length(peakIdxs);
   
-  %we should probably be sending onsetExpectMtx as a cell array of
-  %matrices instead of a big 3D matrix. This is why we need to
-  %match actual onset times for this band to the 3D matrix.
   onsetTimesThisBand = onsetTimesSampsByBand{iBand};
   nOnsets = length(onsetTimesThisBand);
   onsetExpectThisBand = onsetExpectByBand{iBand};

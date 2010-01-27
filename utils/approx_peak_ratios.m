@@ -89,7 +89,11 @@ switch(params.relativeTo)
   
   for iPeakFreq = 1:length(peakFreqs)
     diffFreqs = abs(peakFreqs(iPeakFreq) - ratioVals);
-    ratioIdx = find(diffFreqs == min(diffFreqs));
+    %if the peak frequency was equidistant from two ratios
+    %just taking the higher ratio. This is a very rare occurrence,
+    %and will probably be thrown out anyway because the ratios are beyond
+    %the error tolerance
+    ratioIdx = find(diffFreqs == min(diffFreqs),1,'last');
     errorPct = abs(ratioVals(ratioIdx) - peakFreqs(iPeakFreq))./ratioVals(ratioIdx);
     errorVec(iPeakFreq) = errorPct;
     if(errorPct <= errorTolerance)

@@ -17,6 +17,7 @@ function outData = rp_vonMisesExpectCalc(varargin)
 %
 % Author: Stefan Tomic 04/23/2009
 
+PLOT_METER_PREDICTION = 0;
   
 for iarg = 1:2:nargin
   switch varargin{iarg}
@@ -107,7 +108,7 @@ for iBand = 1:nBands
     thisComplexResonMags = abs(thisComplexResonOut);
     thisComplexResonPhases = angle(thisComplexResonOut);
   
-    clear peakPhases
+    clear peakPhases peakMags
     if(params.perform.vmExpect.useInterpPeak)
       
       nInterpPeaks = length(peakFreqs);
@@ -117,7 +118,7 @@ for iBand = 1:nBands
 	rBorderReson = find(resonFreqs >= thisPeak,1,'first');
 	pct(iInterpPeak) = (thisPeak - resonFreqs(lBorderReson)) ./ ...
 	    (resonFreqs(rBorderReson) - resonFreqs(lBorderReson));
-	if(~isfinite(pct))
+	if(~isfinite(pct(iInterpPeak)))
 	  pct(iInterpPeak) = 0;
 	end
 		
@@ -138,7 +139,7 @@ for iBand = 1:nBands
       peakMags = thisComplexResonMags(peakIdxs);
     end
     
-    nPeaks = length(peakIdxs);
+    nPeaks = length(peakFreqs);
     
     
     clear variance vmDistPerPeak vmAreaPerPeak vmProbPerPeak vmAdjProbPerPeak vmAdjProbPerPeakTest metricLevel pwProportion;
@@ -151,7 +152,6 @@ for iBand = 1:nBands
 
       k(iPeak)  = 1./(variance(iPeak));
       vmDistPerPeak(iPeak,:) =  von_mises_pdf(angleDistVector,0,k(iPeak));
-
 
       diffAngle = peakPhases(iPeak) - angleDistVector;
       evalAngleIdx = find(abs(diffAngle) == min(abs(diffAngle)));
@@ -178,13 +178,80 @@ for iBand = 1:nBands
 	areaIdxs = find((angleDistVector >= peakPhases(iPeak)) & (angleDistVector < 0));
       end
      
+      %COULD THIS BE IMPROVED BY CALCULATING AREA BY SOLVING FOR INTEGRAL?
       vmAreaPerPeak(iPeak) = sum(vmDistPerPeak(iPeak,areaIdxs).*...
 				 weight(iPeak).*(pi/distResolution));    
       
      
+      if(PLOT_METER_PREDICTION)
+	
+	nPhasesStartOffset = - 0.1;
+	startPhasePredict = 2*pi*nPhasesStartOffset;
+	nPhasesPredict = 2;
+	endPhasePredict = 2*pi*nPhasesPredict;
+	pPlotDistRes = 500;
+	
+	
+      	%constructing an overall distribution matrix
+	if(iPeak == 1)
+	  clear metricLevel;
+	  basePeriod = 1./peakFreqs(iPeak);
+	  nPredictPlotSec = basePeriod * nPhasesPredict;
+	  startPredictSecPlot = nPhasesStartOffset * basePeriod;
+	  evalDist = [startPhasePredict:(endPhasePredict-startPhasePredict)./pPlotDistRes:endPhasePredict];
+	  distThisPeak = von_mises_pdf(evalDist,peakPhases(iPeak),k(iPeak));
+	  metricLevel(1,:) = distThisPeak.*weight(iPeak);	  
+	  numSamps = size(metricLevel,2);
+	else
+	  thisPeriod = 1./peakFreqs(iPeak);
+	  periodRatio = basePeriod/thisPeriod;
+	  angleBegin = startPhasePredict * periodRatio;
+	  angleEnd = endPhasePredict*periodRatio;
+	  evalDist = [angleBegin:(angleEnd-angleBegin)/pPlotDistRes:angleEnd];
+	  distThisPeak = von_mises_pdf(evalDist,peakPhases(iPeak),k(iPeak));
+	  %distThisPeak = (distThisPeak - min(distThisPeak)) ./ ...
+	   %   (max(distThisPeak) - min(distThisPeak));
+	  %resampDist = angleBegin:(angleEnd-angleBegin)/(numSamps-1):angleEnd;
+	  %distThisPeakResamp = spline(evalDist,distThisPeak,resampDist);
+	  metricLevel(iPeak,:) = distThisPeak .* weight(iPeak);
+	end
+      end %PLOT_METER_PREDICTION
+      
+      
 
       
     end %for iPeak
+    
+    if(PLOT_METER_PREDICTION)
+      Fs = rp.Fs;
+      thisOnsetTimeSamps = onsetTimesThisBand(iOnset);
+      startPredictSampsPlot = startPredictSecPlot * Fs;
+      startTimeSamps = onsetTimesThisBand(iOnset) + startPredictSampsPlot;
+      endTimeSamps = onsetTimesThisBand(iOnset) + nPredictPlotSec*Fs;
+      figure(1);
+      set(gcf,'position',[100 100 800 1000],'paperposition',[0.25 0.5 8 10]);
+      
+      resAx = axes('position',[0.05 .5 .9 .2]);
+      hold off;
+      plot([startPhasePredict:(endPhasePredict-startPhasePredict)./(numSamps-1):endPhasePredict],sum(metricLevel,1));
+      set(gca,'xlim',[startPhasePredict endPhasePredict]);
+      set(gca,'xtick',[0:pi/2:nPhasesPredict*2*pi],'xticklabel',{'0','pi/2','pi',...
+		    '3/2 pi','2 pi','2 1/2 pi','3 pi','3 1/2 pi','4 pi'});
+
+      inputAx = axes('position',[0.05 .7 .9 .2]);
+      bar([startPredictSecPlot:1/Fs:nPredictPlotSec],inputSig(startTimeSamps:endTimeSamps));
+      hold on;
+      %plot the current onset in red
+      bar([-1:1]./Fs,inputSig(thisOnsetTimeSamps-1:thisOnsetTimeSamps+1),'r');
+      set(gca,'xlim',[startPredictSecPlot nPredictPlotSec]);
+      set(gca,'xtick',[0:.5:endTimeSamps./Fs]);
+      set(gca,'ytick',[0:.2:1]);
+
+    
+      clf;
+    
+    end
+    
     
     
     vmPredictionPerOnset{iBand}(iOnset) = sum(vmProbPerPeak);

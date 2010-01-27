@@ -115,10 +115,13 @@ for iBand = 1:nBands
   
   %if there was no energy in this frame (mean rms is 0), this results
   %in a NaN. So just setting this to 0.
-  onsetExpectMtx(isnan(onsetExpectMtx)) = 0;
+  %onsetExpectMtx(isnan(onsetExpectMtx)) = 0;
 
-  onsetExpectMtxByBand{iBand,1} = onsetExpectMtx;
+  if(nOnsets == 0)
+    onsetExpectMtx = [];
+  end
   
+  onsetExpectMtxByBand{iBand,1} = onsetExpectMtx;
   
 end
 
