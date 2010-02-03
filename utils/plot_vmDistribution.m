@@ -5,7 +5,7 @@ function plot_vmDistibution(inData,params)
 %hardcoding some params here for now
 params.binSize = 0.01;
 params.bandNum = 1;  
-
+params.plot_calc = 'coh';
 
 searchParams.type = 'rhythm_profile';
 anIdx = ensemble_find_analysis_struct(inData,searchParams);
@@ -21,20 +21,37 @@ vmExpect = rp.data{rpCols.vmExpect};
 vmExpectCols = set_var_col_const(vmExpect.vars);
 vmTimingDev = vmExpect.data{vmExpectCols.vmTimingDev};
 
+cohStruct = rp.data{rpCols.coherence};
+cohCols = set_var_col_const(cohStruct.vars);
+coh = cohStruct.data{cohCols.cohPerPeakPerBand};
+
 binSize = params.binSize;
 bandNum = params.bandNum;
 
 %The values of distVector should be at the center of the bins
-distVector = (0+binSize/2):binSize:(0.5-binSize/2);
+
 
 axH = params.axHandle;
 titleText = params.titleText;
   
 bandTimingDev = vmTimingDev{bandNum};  
-tdevDist = hist(bandTimingDev,distVector);
+bandCoh = coh{bandNum};
 
-meanTD = mean(bandTimingDev);
-stdTD = std(bandTimingDev);
+switch(params.plot_calc)
+  
+ case 'timing_dev'
+  distVector = (0+binSize/2):binSize:(0.5-binSize/2);
+  tdevDist = hist(bandTimingDev,distVector);
+  meanTD = nanmean(bandTimingDev);
+  stdTD = nanstd(bandTimingDev);
+ 
+ case 'coh'
+  distVector = [(0+binSize/2):binSize:(1-binSize/2)];
+  tdevDist = hist(bandCoh,distVector);
+  meanTD = nanmean(bandCoh);
+  stdTD = nanstd(bandCoh);
+end  
+  
 bar(axH,distVector,tdevDist);
 set(axH,'xlim',[distVector(1) distVector(end)]);
 title(titleText,'fontWeight','bold');

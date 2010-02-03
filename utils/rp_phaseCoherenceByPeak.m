@@ -26,9 +26,11 @@ onsetExpectByBand = rp.complexExpectAtOnsets;
 resonFreqs = rp.resonatorFreqs;
 Fs = rp.Fs;
 
-MMP = rp.meanResonatorEnergy;
-MMPPeaks = rp.peakInfo.peakFreq;
-MMPPeriods = 1./MMPPeaks;
+
+%NOT BEING USED
+%MMP = rp.meanResonatorEnergy;
+%MMPPeaks = rp.peakInfo.peakFreq;
+%MMPPeriods = 1./MMPPeaks;
 
 nBands = size(rp.resonatorOut,1);
 
@@ -36,40 +38,96 @@ refVec = complex(1,0);
 
 peakPhaseTolerances = pi/6;
 
-nTimeSamps = size(rp.resonatorBandEnergy,3);
-if(~isempty(params.timeLimSecs))
-  timeStartSamps = round(params.timeLimSecs(1) * params.Fs) + 1;
-  timeStopSamps = min(round(params.timeLimSecs(2) * params.Fs),nTimeSamps);
+%nTimeSamps = size(rp.resonatorBandEnergy,3);
+%if(~isempty(params.timeLimSecs))
+%  timeStartSamps = round(params.timeLimSecs(1) * params.Fs) + 1;
+%  timeStopSamps = min(round(params.timeLimSecs(2) * params.Fs),nTimeSamps);
+%else
+%  timeStartSamps = 1;
+%  timeStopSamps = size(rp.resonatorOut,3);
+%end
+
+if(params.perform.phaseCoherence.useInterpPeak)
+  bandPeakInfo = rp.interpMPPStruct.bandPeakInfo;
 else
-  timeStartSamps = 1;
-  timeStopSamps = size(rp.resonatorOut,3);
+  bandPeakInfo = rp.peakInfo.bandPeakInfo;
 end
 
 for iBand = 1:nBands
   
   %recalculate MPP over specified time limit
-  MPPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,timeStartSamps:timeStopSamps)),2);
-  fpParams = params.resonatorBank.peakFinder;
-  peakIdxs = find_peaks(MPPThisBand,fpParams);
-  peakHeights = peak_heights('signal',MPPThisBand,'peakIdxs',peakIdxs);
-  if(isfield(fpParams,'minPeakHeight'))
-    goodPeakMask = peakHeights >= fpParams.minPeakHeight;
-    peakIdxs = peakIdxs(goodPeakMask);
-    peakHeights = peakHeights(goodPeakMask);
-  end
+  %MPPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,timeStartSamps:timeStopSamps)),2);
+  %fpParams = params.resonatorBank.peakFinder;
+  %peakIdxs = find_peaks(MPPThisBand,fpParams);
+  %peakHeights = peak_heights('signal',MPPThisBand,'peakIdxs',peakIdxs);
+  %if(isfield(fpParams,'minPeakHeight'))
+  %  goodPeakMask = peakHeights >= fpParams.minPeakHeight;
+  %  peakIdxs = peakIdxs(goodPeakMask);
+  %  peakHeights = peakHeights(goodPeakMask);
+  %end
 
-  peakFreqsPerBand{iBand} = resonFreqs(peakIdxs);
-  nPeaks = length(peakIdxs);
+  peakFreqsThisBand = bandPeakInfo.peakFreq{iBand};
+  nPeaks = length(peakFreqsThisBand);
   
   onsetTimesThisBand = onsetTimesSampsByBand{iBand};
   nOnsets = length(onsetTimesThisBand);
   onsetExpectThisBand = onsetExpectByBand{iBand};
-  
+ 
   mlMask = [];
   mlAssign = [];
-  for iOnset = 1:nOnsets
-    peakPhases = angle(onsetExpectThisBand(peakIdxs,iOnset));
+  peakMagsByOnset = [];
+  peakPhasesByOnset = [];
+  
+  %we might want to abstract the whole phase and magnitude interpolation
+  %routine out to an earlier stage, since this is fairly costly, and
+  %also used by multiple functions (e.g. vmExpect calc)
+  if(params.perform.phaseCoherence.useInterpPeak)
+    
+    %find the border reson indices to the interpolated peaks
+    %the border indices will be used to calculate interpolated phase angles
+    
+    for iPeak = 1:nPeaks
 
+      lBorderReson = find(resonFreqs <= peakFreqsThisBand(iPeak),1,'last');
+      rBorderReson = find(resonFreqs > peakFreqsThisBand(iPeak),1,'first');
+      thisPeak = peakFreqsThisBand(iPeak);
+      pct =(thisPeak - resonFreqs(lBorderReson)) ./ ...
+	    (resonFreqs(rBorderReson) - resonFreqs(lBorderReson));     
+      
+ 
+      for iOnset = 1:nOnsets
+	
+	thisComplexResonMags = abs(onsetExpectThisBand(:,iOnset));
+	lMag = thisComplexResonMags(lBorderReson);
+	rMag = thisComplexResonMags(rBorderReson);
+	diffMag = diff([lMag rMag]);
+	
+	lAngle = angle(onsetExpectThisBand(lBorderReson,iOnset));
+	rAngle = angle(onsetExpectThisBand(rBorderReson,iOnset));
+	peakPhasesByOnset(iPeak,iOnset) = interpAngle(lAngle,rAngle,pct);
+	peakMagsByOnset(iPeak,iOnset) = lMag + pct .* diffMag;
+	
+      end%for
+    
+    end %for
+    
+  else
+    %not interpolating. Use peakPhases and peakMags corresponding to
+    %non-interpolated MPP
+    
+    peakIdxs = bandPeakInfo.peakIdxs{iBand};
+    peakPhasesByOnset = angle(onsetExpectThisBand(peakIdxs,:));
+    peakMagsByOnset = abs(onsetExpectThisBand(peakIdxs,:));
+    
+  end
+  
+  
+  for iOnset = 1:nOnsets
+
+    %peakPhases = angle(onsetExpectThisBand(peakIdxs,iOnset));
+
+    peakPhases = peakPhasesByOnset(:,iOnset);
+    
     %assigning onset to metric levels
     %if there aren't any metric levels within tolerance, assign the
     %ml with the smallest phase angle
@@ -84,11 +142,19 @@ for iBand = 1:nBands
   
   cohPerPeak{iBand} = [];
   keepPeaks = ones(nPeaks,1);
+
+  allVecs = peakMagsByOnset .* cos(peakPhasesByOnset) + peakMagsByOnset .* ...
+	    sin(peakPhasesByOnset) .* i;
+  
+  
   for iPeak = 1:nPeaks    
     
-    peakRefIdx = peakIdxs(iPeak);
+    %peakRefIdx = peakIdxs(iPeak);
     
-    vecsThisPeak = squeeze(onsetExpectThisBand(peakRefIdx,find(mlAssign(iPeak,:))))';
+    %vecsAssignedThisPeak = squeeze(onsetExpectThisBand(peakRefIdx,find(mlAssign(iPeak,:))))';
+    
+    vecsThisPeak = allVecs(iPeak,find(mlAssign(iPeak,:)))';
+    
     
     %we were throwing away first onset here, but this is now being done in 
     %rp_temporalExpectationError. The choice of whether or not to keep the 
@@ -108,9 +174,9 @@ for iBand = 1:nBands
     
   end %for iPeak
   
-  peakHeights(~keepPeaks) = [];
-  peakFreqsPerBand{iBand}(~keepPeaks) = [];
-  peakHeightsPerBand{iBand,1} = peakHeights;
+  %peakHeights(~keepPeaks) = [];
+  %peakFreqsPerBand{iBand}(~keepPeaks) = [];
+  %peakHeightsPerBand{iBand,1} = peakHeights;
   
   
 end %for iBand
@@ -119,9 +185,14 @@ cohStruct = ensemble_init_data_struct;
 cohStruct.vars = {'peakFreqPerBand','cohPerPeakPerBand','peakHeightsPerBand'};
 cohCols = set_var_col_const(cohStruct.vars);
 
-cohStruct.data{cohCols.peakFreqPerBand} = peakFreqsPerBand;
+%not exporting peakFreqsPerBand or peakHeightsPerBand any longer
+%this was probably only done because we were recalculating MPP peaks
+%due to setting timelim. But timelim should really probably be dealt with
+%elsewhere
+
+%cohStruct.data{cohCols.peakFreqPerBand} = peakFreqsPerBand;
 cohStruct.data{cohCols.cohPerPeakPerBand} = cohPerPeak;
-cohStruct.data{cohCols.peakHeightsPerBand} = peakHeightsPerBand;
+%cohStruct.data{cohCols.peakHeightsPerBand} = peakHeightsPerBand;
 
 outData = cohStruct;
 

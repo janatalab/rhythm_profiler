@@ -157,10 +157,15 @@ for iBand = 1:nBands
       evalAngleIdx = find(abs(diffAngle) == min(abs(diffAngle)));
       evalAngleIdxPerPeak(iPeak) = evalAngleIdx;
      
-      sumResonMags = sum(peakMags);
+      %USING PEAK HEIGHTS HERE INSTEAD OF RESONMAGS
+      %RESONMAGS ARE GOING TO SHIFT AROUND A LOT
+      %sumResonMags = sum(peakMags);
+      sumPeakHeights = sum(peakHeights);
       
-      if(sumResonMags ~= 0)
-	weight(iPeak) = peakMags(iPeak) ./ sumResonMags;
+      
+      if(sumPeakHeights ~= 0)
+	%weight(iPeak) = peakMags(iPeak) ./ sumResonMags;
+	weight(iPeak) = peakHeights(iPeak) ./ sumPeakHeights;
       else
 	weight(iPeak) = 0;
       end
