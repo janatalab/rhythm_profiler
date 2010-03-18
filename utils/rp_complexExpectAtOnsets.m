@@ -34,6 +34,7 @@ fprintf(fid,['\nCalculating reson filter predictor, assuming on no' ...
 %obtain BList and AList (reson filter transfer functions). This can be 
 %done simply by calling resonatorBanks and feeding a single impulse to it.
 hfunc_resonatorBanks = resonatorBanks(params.resonatorBank.method);
+params.resonatorBank.verbose = 0;
 [dummyResonOut,dummyResonFreqs,BList,AList] = ...
       hfunc_resonatorBanks(1,params.resonatorBank);
 
@@ -74,9 +75,13 @@ for iBand = 1:nBands
       x0 = 0;
       x2 = 0;
       
-      y1List = resonBankOutNoOnset(:,leftOnsetBorder-1);
-      
-      if(onsetTimesSamps(iOnset) > 2)
+      if(leftOnsetBorder >= 2)
+	y1List = resonBankOutNoOnset(:,leftOnsetBorder-1);
+      else
+	y1List = zeros(size(resonBankOut,1),1);
+      end
+	
+      if(leftOnsetBorder >= 3)
 	y2List = resonBankOutNoOnset(:,leftOnsetBorder-2);
       else
 	y2List = zeros(size(resonBankOut,1),1);
@@ -122,7 +127,9 @@ for iBand = 1:nBands
   end
   
   onsetExpectMtxByBand{iBand,1} = onsetExpectMtx;
-  
+
+  fprintf(fid,'\n');
+
 end
 
 

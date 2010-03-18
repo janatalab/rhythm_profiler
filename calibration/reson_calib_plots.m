@@ -5,7 +5,7 @@ warning off
 
 TEST_MODEL = 'reson_filterQSpacing_periodBasedDecay';
 %TEST_MODEL = 'comb';
-INPUT_TYPE = 'sine';
+INPUT_TYPE = 'impulse';
 GRAPHTYPE = '';%'magnitude_response';
 PLOT_GAIN_CURVE = 1;
 PLOT_BW = 0;

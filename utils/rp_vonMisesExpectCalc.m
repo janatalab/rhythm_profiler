@@ -16,7 +16,9 @@ function outData = rp_vonMisesExpectCalc(varargin)
 % All Rights Reserved.
 %
 % Author: Stefan Tomic 04/23/2009
-
+% ~9/2009 S.T. - Considerably cleaned up code 
+% 2/22/10 S.T. - Fixed handling of multiple bands after cleanup
+  
 PLOT_METER_PREDICTION = 0;
   
 for iarg = 1:2:nargin
@@ -70,7 +72,8 @@ for iBand = 1:nBands
   
   if(length(onsetTimesThisBand) <=1)
     vmPredictionPerOnset{iBand} = [];
-    vmViolationPerOnset{iBand} = [];
+    vmFulfillPerOnset{iBand} = [];
+    vmLogFulfillPerOnset{iBand} = [];
     vmAreaPerPeakList{iBand} = [];
     vmProportionsPerPeakList{iBand} = [];
     vmPeakFreqs{iBand} = [];
@@ -142,9 +145,9 @@ for iBand = 1:nBands
     nPeaks = length(peakFreqs);
     
     
-    clear variance vmDistPerPeak vmAreaPerPeak vmProbPerPeak vmAdjProbPerPeak vmAdjProbPerPeakTest metricLevel pwProportion;
-    k = [];
-    timingDev = [];
+    clear k weight variance vmDistPerPeak vmAreaPerPeak vmProbPerPeak vmAdjProbPerPeak ...
+	vmAdjProbPerPeakTest metricLevel pwProportion evalAngleIdxPerPeak;
+  
     for iPeak = 1:nPeaks
 	
       pwProportion(iPeak) = peakWidths(iPeak)./ peakFreqs(iPeak)./peakHeights(iPeak);
@@ -159,19 +162,20 @@ for iBand = 1:nBands
      
       %USING PEAK HEIGHTS HERE INSTEAD OF RESONMAGS
       %RESONMAGS ARE GOING TO SHIFT AROUND A LOT
-      %sumResonMags = sum(peakMags);
+      sumResonMags = sum(peakMags);
       sumPeakHeights = sum(peakHeights);
       
-      
-      if(sumPeakHeights ~= 0)
-	%weight(iPeak) = peakMags(iPeak) ./ sumResonMags;
-	weight(iPeak) = peakHeights(iPeak) ./ sumPeakHeights;
+      %if(sumPeakHeights ~= 0)
+      if(sumResonMags ~= 0)
+	weight(iPeak) = peakMags(iPeak) ./ sumResonMags;
+	%weight(iPeak) = peakHeights(iPeak) ./ sumPeakHeights;
       else
 	weight(iPeak) = 0;
       end
 
       vmProbPerPeak(iPeak) = vmDistPerPeak(iPeak,evalAngleIdx).*weight(iPeak);
 
+      
       %find the indices to evaluate for the area of the von mises
       %dist (timing dev calc)
       %not including index corresponding to angle zero. This could result
@@ -183,7 +187,7 @@ for iBand = 1:nBands
 	areaIdxs = find((angleDistVector >= peakPhases(iPeak)) & (angleDistVector < 0));
       end
      
-      %COULD THIS BE IMPROVED BY CALCULATING AREA BY SOLVING FOR INTEGRAL?
+      %COULD THIS BE IMPROVED IF CALCULATING AREA BY SOLVING FOR INTEGRAL?
       vmAreaPerPeak(iPeak) = sum(vmDistPerPeak(iPeak,areaIdxs).*...
 				 weight(iPeak).*(pi/distResolution));    
       
@@ -222,9 +226,6 @@ for iBand = 1:nBands
 	end
       end %PLOT_METER_PREDICTION
       
-      
-
-      
     end %for iPeak
     
     if(PLOT_METER_PREDICTION)
@@ -257,10 +258,12 @@ for iBand = 1:nBands
     
     end
     
-    
+    maxProb = sum(max(vmDistPerPeak,[],2) .* weight');
+    fulfillThisOnset = denvAtOnsets(iOnset) ./ (sum(vmProbPerPeak) ./ maxProb);    
     
     vmPredictionPerOnset{iBand}(iOnset) = sum(vmProbPerPeak);
-    vmViolationPerOnset{iBand}(iOnset) = abs(adjDenvAtOnsets(iOnset) - sum(vmProbPerPeak));
+    vmFulfillPerOnset{iBand}(iOnset) = fulfillThisOnset;
+    vmLogFulfillPerOnset{iBand}(iOnset) = log(fulfillThisOnset);
     vmAreaPerPeakList{iBand,iOnset} = vmAreaPerPeak;
     vmProportionsPerPeakList{iBand,iOnset} = variance;
     vmK{iBand,iOnset} = k;
@@ -271,9 +274,6 @@ for iBand = 1:nBands
   
   vmPeakFreqs{iBand} = peakFreqs;
   
-  
-
-    
     
 end % for iBand
 
@@ -282,7 +282,8 @@ expectationData.vars{end+1} = 'vmAngles';
 expectationData.vars{end+1} = 'vmPeakFreqs';
 expectationData.vars{end+1} = 'vmPredictionPerOnset';
 expectationData.vars{end+1} = 'vmAreaPerPeak';
-expectationData.vars{end+1} = 'vmViolationPerOnset';
+expectationData.vars{end+1} = 'vmFulfillPerOnset';
+expectationData.vars{end+1} = 'vmLogFulfillPerOnset';
 expectationData.vars{end+1} = 'vmTimingDev';
 expectationData.vars{end+1} = 'vmK';
 expectationData.vars{end+1} = 'proportions';
@@ -292,7 +293,8 @@ expDataCols = set_var_col_const(expectationData.vars);
 expectationData.data{expDataCols.vmAngles} = angleDistVector';
 expectationData.data{expDataCols.vmPeakFreqs} = vmPeakFreqs;
 expectationData.data{expDataCols.vmPredictionPerOnset} = vmPredictionPerOnset;
-expectationData.data{expDataCols.vmViolationPerOnset} = vmViolationPerOnset;
+expectationData.data{expDataCols.vmFulfillPerOnset} = vmFulfillPerOnset;
+expectationData.data{expDataCols.vmLogFulfillPerOnset} = vmLogFulfillPerOnset;
 expectationData.data{expDataCols.vmAreaPerPeak} = vmAreaPerPeakList;
 expectationData.data{expDataCols.proportions} = vmProportionsPerPeakList;
 expectationData.data{expDataCols.vmTimingDev} = vmTimingDev;

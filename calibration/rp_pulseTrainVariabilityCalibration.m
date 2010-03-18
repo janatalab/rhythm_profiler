@@ -21,7 +21,7 @@ pulseFreq = 6; %pulse frequency in Hz.
 %barFreq = 0.4749;
 %barFreq = 2;
 %barFreqList = [1.1:0.05:1.3];
-barFreqList = 1.1;
+barFreqList = 2;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -60,7 +60,7 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 %stdDevsMs = [0 20 40 60 80];
 stdDevsMs = [0 20 40 80];
 %stdDevsMs = [0 10 20 40 60 80];
-%stdDevsMs = [60 80];
+stdDevsMs = [80];
 %stdDevsMs = 0;
 
 metricLabels = {'isochronous','meter = 6/8','isofast','meter = 3/4','meter = 4/4','accent every other','alternate23','isochronous'};
@@ -90,7 +90,7 @@ vmModes = {'no','k=4';...
 
 nVmModes = size(vmModes,1);
 
-useAccentIdxs = [4];
+useAccentIdxs = [3];
 metricLabels = metricLabels(useAccentIdxs);
 accentPatterns = accentPatterns(useAccentIdxs);
 
@@ -205,7 +205,7 @@ for iaccent = 1:nAccent
     params{1}.ipem.rp.temporalExpect.debugPlotFname = sprintf('%s_%s_%dms_dev_%s_debug.ps',fstub,freqFileLabel,devMs,metricFileLabels{iaccent}); 
     params{1}.ipem.rp.temporalExpect.debugPlotFPath = plotPath;
     params{1}.ipem.rp.temporalExpect.debugPlotTitle = figTitle;
-    params{1}.ipem.glob.save_calc = {};
+
     
     %params{1}.ipem.rp.resonatorBank.gainType = 'prenorm_weighted';
     params{1}.ipem.rp.resonatorBank.peakFinder.thresh = 0;

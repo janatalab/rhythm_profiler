@@ -26,26 +26,11 @@ onsetExpectByBand = rp.complexExpectAtOnsets;
 resonFreqs = rp.resonatorFreqs;
 Fs = rp.Fs;
 
-
-%NOT BEING USED
-%MMP = rp.meanResonatorEnergy;
-%MMPPeaks = rp.peakInfo.peakFreq;
-%MMPPeriods = 1./MMPPeaks;
-
 nBands = size(rp.resonatorOut,1);
 
 refVec = complex(1,0);
 
 peakPhaseTolerances = pi/6;
-
-%nTimeSamps = size(rp.resonatorBandEnergy,3);
-%if(~isempty(params.timeLimSecs))
-%  timeStartSamps = round(params.timeLimSecs(1) * params.Fs) + 1;
-%  timeStopSamps = min(round(params.timeLimSecs(2) * params.Fs),nTimeSamps);
-%else
-%  timeStartSamps = 1;
-%  timeStopSamps = size(rp.resonatorOut,3);
-%end
 
 if(params.perform.phaseCoherence.useInterpPeak)
   bandPeakInfo = rp.interpMPPStruct.bandPeakInfo;
@@ -55,17 +40,6 @@ end
 
 for iBand = 1:nBands
   
-  %recalculate MPP over specified time limit
-  %MPPThisBand = mean(squeeze(rp.resonatorBandEnergy(iBand,:,timeStartSamps:timeStopSamps)),2);
-  %fpParams = params.resonatorBank.peakFinder;
-  %peakIdxs = find_peaks(MPPThisBand,fpParams);
-  %peakHeights = peak_heights('signal',MPPThisBand,'peakIdxs',peakIdxs);
-  %if(isfield(fpParams,'minPeakHeight'))
-  %  goodPeakMask = peakHeights >= fpParams.minPeakHeight;
-  %  peakIdxs = peakIdxs(goodPeakMask);
-  %  peakHeights = peakHeights(goodPeakMask);
-  %end
-
   peakFreqsThisBand = bandPeakInfo.peakFreq{iBand};
   nPeaks = length(peakFreqsThisBand);
   
@@ -124,8 +98,6 @@ for iBand = 1:nBands
   
   for iOnset = 1:nOnsets
 
-    %peakPhases = angle(onsetExpectThisBand(peakIdxs,iOnset));
-
     peakPhases = peakPhasesByOnset(:,iOnset);
     
     %assigning onset to metric levels
@@ -149,18 +121,12 @@ for iBand = 1:nBands
   
   for iPeak = 1:nPeaks    
     
-    %peakRefIdx = peakIdxs(iPeak);
-    
-    %vecsAssignedThisPeak = squeeze(onsetExpectThisBand(peakRefIdx,find(mlAssign(iPeak,:))))';
-    
     vecsThisPeak = allVecs(iPeak,find(mlAssign(iPeak,:)))';
-    
     
     %we were throwing away first onset here, but this is now being done in 
     %rp_temporalExpectationError. The choice of whether or not to keep the 
     %first onset will need to be revisited. It is being thrown out now for
     %stims, since ANIs have been found with unusually high peaks.
-    %vecsThisPeak(1) = [];
     
     %there have been a few instances where only the first onset was
     %assigned to a given peak. We are throwing these peaks out
@@ -168,31 +134,16 @@ for iBand = 1:nBands
       cohPerPeak{iBand}(end+1,1) = coherence(vecsThisPeak,refVec);
     else
       keepPeaks(iPeak) = 0;
-      %peakHeights(iPeak) = [];
-      %peakFreqsPerBand{iBand}(iPeak) = [];    
     end
     
   end %for iPeak
   
-  %peakHeights(~keepPeaks) = [];
-  %peakFreqsPerBand{iBand}(~keepPeaks) = [];
-  %peakHeightsPerBand{iBand,1} = peakHeights;
-  
-  
 end %for iBand
 
 cohStruct = ensemble_init_data_struct;
-cohStruct.vars = {'peakFreqPerBand','cohPerPeakPerBand','peakHeightsPerBand'};
+cohStruct.vars = {'cohPerPeakPerBand'};
 cohCols = set_var_col_const(cohStruct.vars);
-
-%not exporting peakFreqsPerBand or peakHeightsPerBand any longer
-%this was probably only done because we were recalculating MPP peaks
-%due to setting timelim. But timelim should really probably be dealt with
-%elsewhere
-
-%cohStruct.data{cohCols.peakFreqPerBand} = peakFreqsPerBand;
 cohStruct.data{cohCols.cohPerPeakPerBand} = cohPerPeak;
-%cohStruct.data{cohCols.peakHeightsPerBand} = peakHeightsPerBand;
 
 outData = cohStruct;
 
