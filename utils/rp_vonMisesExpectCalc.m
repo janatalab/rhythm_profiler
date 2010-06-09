@@ -19,7 +19,7 @@ function outData = rp_vonMisesExpectCalc(varargin)
 % ~9/2009 S.T. - Considerably cleaned up code 
 % 2/22/10 S.T. - Fixed handling of multiple bands after cleanup
   
-PLOT_METER_PREDICTION = 0;
+PLOT_METER_PREDICTION = 1; 
   
 for iarg = 1:2:nargin
   switch varargin{iarg}
@@ -60,6 +60,13 @@ resonFreqs = rp.resonatorFreqs;
 nResons = length(resonFreqs);
 nBands = length(onsetInfo.onsetTimesSampsByBand);
 
+PLOT_METER_PREDICTION = PLOT_METER_PREDICTION && (nBands == 1); % a little kludge so that I can
+                                            % plot on one band in one
+                                            % environment while I run real
+                                            % data in another environment
+
+
+
 if(params.perform.vmExpect.useInterpPeak)
   bandPeakInfo = rp.interpMPPStruct.bandPeakInfo;
 else
@@ -99,12 +106,16 @@ for iBand = 1:nBands
   meanRMSThisBand = mean(rmsResonThisBand);
 
   onsetExpectByBand = rp.complexExpectAtOnsets{iBand};
-  onsetExpectByBand = onsetExpectByBand ./ meanRMSThisBand;
-  denvEnergy = sqrt(mean(denvThisBand.^2));
+  
+  %removing this normalization for now
+  %onsetExpectByBand = onsetExpectByBand ./ meanRMSThisBand;
 
-  adjDenvAtOnsets = denvAtOnsets ./ denvEnergy;
+  %denvEnergy = sqrt(mean(denvThisBand.^2));
+  %adjDenvAtOnsets = denvAtOnsets ./ denvEnergy;
     
- 
+  
+  clear normDenvPerOnset    maxProbPerOnset normProbPerOnset normProbPerOnset2;
+  
   for iOnset = 1:nOnsets
     
     thisComplexResonOut = onsetExpectByBand(:,iOnset);
@@ -145,7 +156,7 @@ for iBand = 1:nBands
     nPeaks = length(peakFreqs);
     
     
-    clear k weight variance vmDistPerPeak vmAreaPerPeak vmProbPerPeak vmAdjProbPerPeak ...
+    clear k weight variance vmProbPerPeak vmDistPerPeak vmAreaPerPeak vmAdjProbPerPeak ...
 	vmAdjProbPerPeakTest metricLevel pwProportion evalAngleIdxPerPeak;
   
     for iPeak = 1:nPeaks
@@ -187,7 +198,6 @@ for iBand = 1:nBands
 	areaIdxs = find((angleDistVector >= peakPhases(iPeak)) & (angleDistVector < 0));
       end
      
-      %COULD THIS BE IMPROVED IF CALCULATING AREA BY SOLVING FOR INTEGRAL?
       vmAreaPerPeak(iPeak) = sum(vmDistPerPeak(iPeak,areaIdxs).*...
 				 weight(iPeak).*(pi/distResolution));    
       
@@ -234,7 +244,7 @@ for iBand = 1:nBands
       startPredictSampsPlot = startPredictSecPlot * Fs;
       startTimeSamps = onsetTimesThisBand(iOnset) + startPredictSampsPlot;
       endTimeSamps = onsetTimesThisBand(iOnset) + nPredictPlotSec*Fs;
-      figure(1);
+      figure(9);
       set(gcf,'position',[100 100 800 1000],'paperposition',[0.25 0.5 8 10]);
       
       resAx = axes('position',[0.05 .5 .9 .2]);
@@ -258,10 +268,38 @@ for iBand = 1:nBands
     
     end
     
-    maxProb = sum(max(vmDistPerPeak,[],2) .* weight');
-    fulfillThisOnset = denvAtOnsets(iOnset) ./ (sum(vmProbPerPeak) ./ maxProb);    
+    %normalize denvAtOnsets and vmProbPerPeak by a specified window size
+    %for fulfillment calculation
+    normWindow = params.vmExpect.normalizeWindow;
+    normWindowSamps = round(normWindow .* params.Fs);
+    windowStart = max(1,(onsetTimesThisBand(iOnset) - normWindowSamps));
+    onsetIdxsThisWindow = find(onsetTimesThisBand >= windowStart & ...
+			       onsetTimesThisBand <= ...
+			       onsetTimesThisBand(iOnset));
     
+    normDenvPerOnset(iOnset) = denvAtOnsets(iOnset) ./ max(denvAtOnsets(onsetIdxsThisWindow));
     vmPredictionPerOnset{iBand}(iOnset) = sum(vmProbPerPeak);
+    
+    %normalizing Prob by maximum calculated prediction value over a window
+    %normProbPerOnset(iOnset) = vmPredictionPerOnset{iBand}(iOnset) ./ max(vmPredictionPerOnset{iBand}(onsetIdxsThisWindow));
+    
+    %normalizing Prob by maximum possible distribution value in window
+    %maxProbPerOnset(iOnset) = sum(max(vmDistPerPeak,[],2) .* weight');
+    %maxProbThisWindow = max(maxProbPerOnset(onsetIdxsThisWindow));
+    %normProbPerOnset(iOnset) = (sum(vmProbPerPeak) ./ maxProbThisWindow);  
+
+    %normalizing Prob by maximum Distribution only for that onset
+    maxProb = sum(max(vmDistPerPeak,[],2) .* weight');
+    normProbPerOnset(iOnset) = (sum(vmProbPerPeak) ./ maxProb);
+        
+    %fulfillThisOnset = normDenvPerOnset(iOnset) ./ normProbPerOnset(iOnset);
+    fulfillThisOnset = denvAtOnsets(iOnset) ./ normProbPerOnset(iOnset);
+
+    %trying simple inverse of probability
+    % fulfillThisOnset = 1 ./ normProbPerOnset(iOnset);
+    
+    
+    %vmPredictionPerOnset{iBand}(iOnset) = sum(vmProbPerPeak);
     vmFulfillPerOnset{iBand}(iOnset) = fulfillThisOnset;
     vmLogFulfillPerOnset{iBand}(iOnset) = log(fulfillThisOnset);
     vmAreaPerPeakList{iBand,iOnset} = vmAreaPerPeak;
