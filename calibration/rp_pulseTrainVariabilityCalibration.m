@@ -21,7 +21,9 @@ pulseFreq = 6; %pulse frequency in Hz.
 %barFreq = 0.4749;
 %barFreq = 2;
 %barFreqList = [1.1:0.05:1.3];
-barFreqList = 2;
+barFreqList = .5;
+
+scaleInput = 1;
 
 %seed the random number generator, used for note occurrence, below
 rand('state',sum(100*clock));
@@ -58,10 +60,10 @@ gaussian = gauss1D([1:Fs-1]-Fs/2,0,gaussFWHMsamps,1);
 
 %standard deviations in ms
 %stdDevsMs = [0 20 40 60 80];
-stdDevsMs = [0 20 40 80];
+%stdDevsMs = [0 20 40 80];
 %stdDevsMs = [0 10 20 40 60 80];
-stdDevsMs = [80];
-%stdDevsMs = 0;
+%stdDevsMs = [80];
+stdDevsMs = 0;
 
 metricLabels = {'isochronous','meter = 6/8','isofast','meter = 3/4','meter = 4/4','accent every other','alternate23','isochronous'};
 %'meter = 3/4','accent every other','alternate23'
@@ -90,7 +92,7 @@ vmModes = {'no','k=4';...
 
 nVmModes = size(vmModes,1);
 
-useAccentIdxs = [3];
+useAccentIdxs = [2];
 metricLabels = metricLabels(useAccentIdxs);
 accentPatterns = accentPatterns(useAccentIdxs);
 
@@ -187,6 +189,9 @@ for iaccent = 1:nAccent
     if(CONVOLVE_WITH_GAUSSIAN)
       sig = conv(sig,gaussian);
     end
+    
+    
+    sig = sig .* scaleInput;
     
     aud_st = init_aud('Fs',Fs,'nchan',1,'wvf',sig);
     
