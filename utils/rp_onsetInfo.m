@@ -1,7 +1,9 @@
 function outData = rp_onsetInfo(varargin)
-% Initializes a rhythm profiler (rp) data struct
-% 
-% rp = init_rp_struct(varargin)
+%
+% Calculates and returns various onset information (times, heights) of onsets.
+%
+% outData = rp_onsetInfo(varargin)
+%
 % 
 % INPUTS:
 % tag, value pairs:

@@ -1,6 +1,6 @@
 function outData = rp_ratioEntropyAnalysis(inData,params)
-
-% Processes an rp struct through a trained meter classifier neural network
+%
+% calculates entropy and KL divergence based on MPP peaks.
 %
 % outData = rp_ratioEntropyAnalysis(inData,params)
 %
