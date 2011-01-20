@@ -11,3 +11,5 @@ function ani = ani_paramGroups
 ani.PlotFlag = 0;
 ani.DownSampleFactor = 5;
 ani.normalize_wav = 1;
+ani.start_time_sec = [];
+ani.dur_sec = [];
