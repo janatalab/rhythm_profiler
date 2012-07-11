@@ -10,7 +10,7 @@ function outData = get_resonPeakInfo(meanEnergy,resonFreqs,params)
 % This function passes the params struct to find_peaks.m
 % Please see the discription for that function for details on params.
 %
-% Copyright (c) 2007 The Regents of the University of California
+% Copyright (c) 2007-2012 The Regents of the University of California
 % All Rights Reserved
 %
 % Author(s):
@@ -32,7 +32,9 @@ if(~isempty(peakIdxs))
     peakIdxs = peakIdxs(goodPeakMask,1);
     normHeights = normHeights(goodPeakMask);
   end
+end
 
+if(~isempty(peakIdxs))
   peakFreqs = resonFreqs(peakIdxs);
   maxPeakEnergyFreq = resonFreqs(find(meanEnergy == max(meanEnergy(peakIdxs)),1,'first'));
   normPeakFreqs = peakFreqs ./ maxPeakEnergyFreq;

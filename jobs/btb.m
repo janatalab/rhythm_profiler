@@ -5,7 +5,7 @@
 % See ipem_proc_series.m and rhythm_profiler.m for further details on how
 % the algorithm works. For details on the plotting, see plot_rhythmProfile.m
 %
-% Copyright (c) 2007 The Regents of the University of California
+% Copyright (c) 2007-2012 The Regents of the University of California
 % All Rights Reserved
 %
 % Author:
@@ -16,7 +16,7 @@
 %Currently, only one type (wav or mid) can be processed during each
 %run, since they require different parameters to the model and
 %parameters are set at the top level.
-rp_proc_dir = '/home/stefan/btb_analysis_dir/';
+rp_proc_dir = '/home/fbarrett/matlab/jlmt_dist/data/test_jlmt';
 input_file_pattern = '*.mp3';
 
 %Remove the comment marks on the following two lines

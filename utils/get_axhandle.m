@@ -14,7 +14,7 @@ function axh_return = get_axhandle(axh_array,tag)
 % OUTPUT
 %  an axes handle for the axes with the given tag
 %
-% Copyright (c) 2007 The Regents of the University of California
+% Copyright (c) 2007-2012 The Regents of the University of California
 % All Rights Reserved 
 %
 % Author:

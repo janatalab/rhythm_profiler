@@ -7,7 +7,7 @@ function outData = plot_dir_rhythm_profile(inData,params)
 % outputs, average periodicity surfaces, band periodicity surfaces,
 % and mean periodicity profiles. Any subset of these will be plotted
 % depending on how the params are set. This function calls
-% ipem_proc_series to either find an existing saved calculation or
+% jlmt_proc_series to either find an existing saved calculation or
 % to calculate new ANI and rp, so this function may be used to
 % perform the calculations as well as plotting.
 %
@@ -21,16 +21,16 @@ function outData = plot_dir_rhythm_profile(inData,params)
 %                            tagged to the plot name (for
 %                            separating plots for each input wav 
 %                            or midi file)
-%  params.ipem:              parameter structure for
-%                            ipem_proc_series. The data structures
+%  params.jlmt:              parameter structure for
+%                            jlmt_proc_series. The data structures
 %                            for ani and rp calculations will
 %                            either be searched for and found, or
-%                            will be calculated. params.ipem.glob,
-%                            params.ipem.ani, params.ipem.rp each
+%                            will be calculated. params.jlmt.glob,
+%                            params.jlmt.ani, params.jlmt.rp each
 %                            should be populated with the desired
-%                            ipem parameters (see ipem_proc_series)
+%                            jlmt parameters (see jlmt_proc_series)
 %
-% Copyright (c) 2007 The Regents of the University of California
+% Copyright (c) 2007-2012 The Regents of the University of California
 % All Rights Reserved
 %
 % Author(s):
@@ -102,7 +102,7 @@ for iFile = 1:nFiles;
     inputPlotData = {audStruct};
    case {'.mid','*.midi'}
     
-    params.n2a_params.Fs = params.ipem.rp.Fs;
+    params.n2a_params.Fs = params.jlmt.rp.Fs;
     nmat_cols = nmat_columns;
     tr = javamidi2tr(thisLocation);
     %unique midi notes are used to differentiate left and right hands in
@@ -124,16 +124,15 @@ for iFile = 1:nFiles;
     audStruct.data{audStructCols.filename} = [fstub ext];
   end
 
-  %params.ipem.glob.force_recalc = {};
-  %params.ipem.glob.save_calc = params.ipem.glob.process;
-  disp('Running ipem_proc_series...');
-  ipemOut = ipem_proc_series(audStruct,params.ipem);
-  disp('Finished ipem_proc_series...');
-  ipemOutCols = set_var_col_const(ipemOut.vars);
+  %params.jlmt.glob.force_recalc = {};
+  %params.jlmt.glob.save_calc = params.jlmt.glob.process;
+  disp('Running jlmt_proc_series...');
+  jlmtOut = jlmt_proc_series(audStruct,params.jlmt);
+  disp('Finished jlmt_proc_series...');
+  jlmtOutCols = set_var_col_const(jlmtOut.vars);
   
-  rp = ipemOut.data{ipemOutCols.rp}{1};
+  rp = jlmtOut.data{jlmtOutCols.rp}{1};
   
-  clear plotData;
   plotData{1} = rp;
   plotData(2:length(inputPlotData)+1) = inputPlotData;
   
