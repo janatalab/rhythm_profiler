@@ -1,33 +1,40 @@
-function [metricOnly_resEnergy tactusOnly_resEnergy] = isolate_peak_resons(varargin)
+function [metricOnly_resEnergy tactusOnly_resEnergy metricNonmetric_resEnergy_ratio] = isolate_peak_resons(varargin)
 
 % outData = isolate_RP_resons('stimRP',stimRP_st,'targetRP',targRP)
 % 
 % Isolates frequency bands from reson energy matrix that correspond to a set 
 % of frequency peaks, as produced by Rhythm Profiler. Allows one to assess 
-% energy at periodicities corresponding to a stimulus' metric structure, 
-% ignoring energy in non-metric frequencies. 
+% energy at periodicities corresponding to a stimulus' metric structure. Also 
+% allows one to assess the ratio of metric to non-metric energy (useful for
+% mocap data, which often contain a considerable amount of energy unrelated 
+% to a stimulus).
 %
 % Input
 %   'stimRP': rp struct for rhythm profile from which peaks will be extracted
 %   'targetRP': rp struct that will be pared down based on stimRP peaks
-%
+%   'calcRatio': set to 1 if metric/nonmetric energy ratio calculation is desired. Set to 0 otherwise.
 % Output
 %   metricOnly_resEnergy: reson energy matrix with containing only the energy from metric (peak) resonators
 %   tactusOnly_resEnergy: reson energy matrix containing only the energy from 
 %                         the tactus (highest peak) resonator (and the surrounding
 %                         resonators, depending on peak width)
+%   metricNonmetric_resEnergy_ratio: ratio of metric to non-metric energy.
+%                         This variable is empty if calcRatio set to 0.
 %
-% Oct 28, 2012 BH
+% Oct 28, 2012 BH - created function
+% Dec 05, 2012 BH - added option to calculate metric to non-metric energy ratio
 
 for iarg = 1:2:length(varargin)
-  
-  switch(varargin{iarg})
-   case 'stimRP'
-    stimRP_st = varargin{iarg+1};
-   case 'targetRP'
-    targRP = varargin{iarg+1};
-  end
- 
+    
+    switch(varargin{iarg})
+        case 'stimRP'
+            stimRP_st = varargin{iarg+1};
+        case 'targetRP'
+            targRP = varargin{iarg+1};
+        case 'calcRatio'
+            calcRatio = varargin{iarg+1};
+    end
+    
 end
 
 % Get freq peak info from stimRP
@@ -51,6 +58,13 @@ for ipeak = 1:npeaks
     curr_peakFreq = stimPeak_freqs(ipeak);
     curr_peakWidth = stimPeakWidth(ipeak);
     peakRange = [-1 1]*curr_peakWidth/2 + curr_peakFreq;
+    
+    % catch situations in which first or last value of peakRange is beyond the range of stimResonFreqs
+    if peakRange(1) < stimResonFreqs(1)
+        peakRange(1) = stimResonFreqs(1);
+    elseif peakRange(2) > stimResonFreqs(end)
+        peakRange(2) = stimResonFreqs(end);
+    end
     idxs = find(stimResonFreqs <= min(peakRange),1,'last'):find(stimResonFreqs >= max(peakRange),1,'first');
     isolateResonIdxs = union(isolateResonIdxs, idxs);
     % if current peak is tactus, get corresponding reson indices
@@ -69,5 +83,16 @@ metricOnly_resEnergy = zeros(size(targResEnergy));
 metricOnly_resEnergy(isolateResonIdxs,:) = targResEnergy(isolateResonIdxs,:); % zeroing out rows corresponding to non-peak resons rather than removing rows altogether
 tactusOnly_resEnergy = zeros(size(targResEnergy));
 tactusOnly_resEnergy(stim_tactusResonIdxs,:) = targResEnergy(stim_tactusResonIdxs,:);
+
+% If desired, calculate ratio of metric to nonmetric energy
+if calcRatio
+    %calculate ratio here
+    nonMetricEnergy = targResEnergy;
+    nonMetricEnergy(isolateResonIdxs,:) = 0;
+    metricNonmetric_resEnergy_ratio = mean(metricOnly_resEnergy)./mean(nonMetricEnergy);
+    
+else
+    metricNonmetric_resEnergy_ratio = [];
+end
 
 return
