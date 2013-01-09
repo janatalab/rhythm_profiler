@@ -39,11 +39,13 @@ for iStim = 1:nStims
   thisStimID = ...
       stimMetaData.data{stimMetaDataCols.stimulus_id}(iStim);
   fprintf('Processing Stim %d, ID %d\n',iStim,thisStimID);
-  
-  params.ipem.ensemble = params.ensemble;
-  ipemProc = ipem_proc_series(thisStimID,params.ipem);
-  ipemProcCols = set_var_col_const(ipemProc.vars);
-  rp = ipemProc.data{ipemProcCols.rp}{1};
+
+  if ~isfield(params,'jlmt') || ~isfield(params.jlmt,'ensemble')
+    params.jlmt.ensemble = params.ensemble;
+  end
+  jlmtProc = jlmt_proc_series(thisStimID,params.jlmt);
+  jlmtProcCols = set_var_col_const(jlmtProc.vars);
+  rp = jlmtProc.data{jlmtProcCols.rp}{1};
   rp = ensemble_datastruct2tree(rp);
 
   % Find the peak with maximum amplitude
