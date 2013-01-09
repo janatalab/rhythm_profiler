@@ -34,15 +34,17 @@ for ivar = 1:length(copyVars)
   outData.data(outcols.(copyVars{ivar})) = stimMetaData.data(stimMetaDataCols.(copyVars{ivar}));
 end
 
-for iStim = 1:nStims
+if ~isfield(params,'jlmt') || ~isfield(params.jlmt,'ensemble')
+  params.jlmt.ensemble = params.ensemble;
+end
+
+tempo = nan(nStims,1); % use this temporary variable to make parfor happy
+parfor iStim = 1:nStims
 
   thisStimID = ...
       stimMetaData.data{stimMetaDataCols.stimulus_id}(iStim);
   fprintf('Processing Stim %d, ID %d\n',iStim,thisStimID);
 
-  if ~isfield(params,'jlmt') || ~isfield(params.jlmt,'ensemble')
-    params.jlmt.ensemble = params.ensemble;
-  end
   jlmtProc = jlmt_proc_series(thisStimID,params.jlmt);
   jlmtProcCols = set_var_col_const(jlmtProc.vars);
   rp = jlmtProc.data{jlmtProcCols.rp}{1};
@@ -51,7 +53,10 @@ for iStim = 1:nStims
   % Find the peak with maximum amplitude
   [dummy,peakIdx]=max(rp.peakInfo.normHeight);
   
-  outData.data{outcols.tempo}(iStim) = rp.peakInfo.peakFreq(peakIdx) * 60;
+  % calculate tempo from the max amplitude peak
+  tempo(iStim) = rp.peakInfo.peakFreq(peakIdx) * 60;
   
 end % for iStim
+outData.data{outcols.tempo} = tempo;
+
 return
