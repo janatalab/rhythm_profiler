@@ -79,16 +79,16 @@ end
 
 targRP_cols = set_var_col_const(targRP.vars);
 targResEnergy = targRP.data{targRP_cols.resonatorEnergy};
-metricOnly_resEnergy = zeros(size(targResEnergy));
-metricOnly_resEnergy(isolateResonIdxs,:) = targResEnergy(isolateResonIdxs,:); % zeroing out rows corresponding to non-peak resons rather than removing rows altogether
-tactusOnly_resEnergy = zeros(size(targResEnergy));
-tactusOnly_resEnergy(stim_tactusResonIdxs,:) = targResEnergy(stim_tactusResonIdxs,:);
+metricOnly_resEnergy = targResEnergy(isolateResonIdxs,:);
+metricOnly_APS = zeros(size(targResEnergy));
+metricOnly_APS(isolateResonIdxs,:) = targResEnergy(isolateResonIdxs,:); % zeroing out rows corresponding to non-peak resons rather than removing rows altogether
+tactusOnly_resEnergy = targResEnergy(stim_tactusResonIdxs,:);
 
 % If desired, calculate ratio of metric to nonmetric energy
 if calcRatio
     %calculate ratio here
     nonMetricEnergy = targResEnergy;
-    nonMetricEnergy(isolateResonIdxs,:) = 0;
+    nonMetricEnergy(isolateResonIdxs,:) = [];
     metricNonmetric_resEnergy_ratio = mean(metricOnly_resEnergy)./mean(nonMetricEnergy);
     
 else
