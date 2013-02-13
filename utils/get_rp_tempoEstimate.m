@@ -41,6 +41,8 @@ end
 tempo = nan(nStims,1); % use this temporary variable to make parfor happy
 parfor iStim = 1:nStims
 
+  try
+
   thisStimID = ...
       stimMetaData.data{stimMetaDataCols.stimulus_id}(iStim);
   fprintf('Processing Stim %d, ID %d\n',iStim,thisStimID);
@@ -55,6 +57,8 @@ parfor iStim = 1:nStims
   
   % calculate tempo from the max amplitude peak
   tempo(iStim) = rp.peakInfo.peakFreq(peakIdx) * 60;
+
+  end
   
 end % for iStim
 outData.data{outcols.tempo} = tempo;
