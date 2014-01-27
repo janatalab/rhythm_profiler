@@ -1,4 +1,4 @@
-function [metricOnly_resEnergy tactusOnly_resEnergy metricNonmetric_resEnergy_ratio] = isolate_peak_resons(varargin)
+function [metricOnly_resEnergy metricNonmetric_resEnergy_ratio metricReson_mask] = isolate_peak_resons(varargin)
 
 % outData = isolate_RP_resons('stimRP',stimRP_st,'targetRP',targRP)
 % 
@@ -40,6 +40,7 @@ end
 % Get freq peak info from stimRP
 stimRP_cols = set_var_col_const(stimRP_st.vars);
 stimResonFreqs = stimRP_st.data{stimRP_cols.resonatorFreqs};
+nresons = length(stimResonFreqs);
 stimPeakInfo = stimRP_st.data{stimRP_cols.peakInfo};
 stimPeak_cols = set_var_col_const(stimPeakInfo.vars);
 stimPeak_freqs = stimPeakInfo.data{stimPeak_cols.peakFreq};
@@ -74,15 +75,17 @@ for ipeak = 1:npeaks
     
 end
 
+% logical mask for metric resonators
+metricReson_mask = ismember(1:nresons,isolateResonIdxs);
+
 % Now, reduce target average periodicity surface matrix down to reson_Idx
 % resonators
-
 targRP_cols = set_var_col_const(targRP.vars);
 targResEnergy = targRP.data{targRP_cols.resonatorEnergy};
 metricOnly_resEnergy = targResEnergy(isolateResonIdxs,:);
-metricOnly_APS = zeros(size(targResEnergy));
-metricOnly_APS(isolateResonIdxs,:) = targResEnergy(isolateResonIdxs,:); % zeroing out rows corresponding to non-peak resons rather than removing rows altogether
-tactusOnly_resEnergy = targResEnergy(stim_tactusResonIdxs,:);
+% metricOnly_APS = zeros(size(targResEnergy));
+% metricOnly_APS(isolateResonIdxs,:) = targResEnergy(isolateResonIdxs,:); % zeroing out rows corresponding to non-peak resons rather than removing rows altogether
+% tactusOnly_resEnergy = targResEnergy(stim_tactusResonIdxs,:);
 
 % If desired, calculate ratio of metric to nonmetric energy
 if calcRatio
@@ -90,6 +93,10 @@ if calcRatio
     nonMetricEnergy = targResEnergy;
     nonMetricEnergy(isolateResonIdxs,:) = [];
     metricNonmetric_resEnergy_ratio = mean(metricOnly_resEnergy)./mean(nonMetricEnergy);
+    
+%     % for plotting APS minus non-metric reson energy
+%     nonMetricAPS = targResEnergy;
+%     nonMetricAPS(isolateResonIdxs,:) = -(maxResEnergy/6);
     
 else
     metricNonmetric_resEnergy_ratio = [];
