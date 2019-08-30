@@ -128,27 +128,27 @@ for iBand = 1:nBands
       
       nInterpPeaks = length(peakFreqs);
       for iInterpPeak = 1:nInterpPeaks
-	thisPeak = peakFreqs(iInterpPeak);
-	lBorderReson = find(resonFreqs <= thisPeak,1,'last');
-	rBorderReson = find(resonFreqs >= thisPeak,1,'first');
-	pct(iInterpPeak) = (thisPeak - resonFreqs(lBorderReson)) ./ ...
-	    (resonFreqs(rBorderReson) - resonFreqs(lBorderReson));
-	if(~isfinite(pct(iInterpPeak)))
-	  pct(iInterpPeak) = 0;
-	end
-		
-	lAngle = angle(thisComplexResonOut(lBorderReson));
-	rAngle = angle(thisComplexResonOut(rBorderReson));
-	
-	lMag = thisComplexResonMags(lBorderReson);
-	rMag = thisComplexResonMags(rBorderReson);
-	diffMag = diff([lMag rMag]);
-	
-	peakPhases(iInterpPeak) = interpAngle(lAngle,rAngle,pct(iInterpPeak));
-	peakMags(iInterpPeak) = lMag + pct(iInterpPeak) .* diffMag;
-	
-      end      
-   
+        thisPeak = peakFreqs(iInterpPeak);
+        lBorderReson = find(resonFreqs <= thisPeak,1,'last');
+        rBorderReson = find(resonFreqs >= thisPeak,1,'first');
+        pct(iInterpPeak) = (thisPeak - resonFreqs(lBorderReson)) ./ ...
+          (resonFreqs(rBorderReson) - resonFreqs(lBorderReson));
+        if(~isfinite(pct(iInterpPeak)))
+          pct(iInterpPeak) = 0;
+        end
+        
+        lAngle = angle(thisComplexResonOut(lBorderReson));
+        rAngle = angle(thisComplexResonOut(rBorderReson));
+        
+        lMag = thisComplexResonMags(lBorderReson);
+        rMag = thisComplexResonMags(rBorderReson);
+        diffMag = diff([lMag rMag]);
+        
+        peakPhases(iInterpPeak) = interpAngle(lAngle,rAngle,pct(iInterpPeak));
+        peakMags(iInterpPeak) = lMag + pct(iInterpPeak) .* diffMag;
+        
+      end
+      
     else
       peakPhases = angle(thisComplexResonOut(peakIdxs))';
       peakMags = thisComplexResonMags(peakIdxs);
@@ -179,10 +179,10 @@ for iBand = 1:nBands
       
       %if(sumPeakHeights ~= 0)
       if(sumResonMags ~= 0)
-	weight(iPeak) = peakMags(iPeak) ./ sumResonMags;
-	%weight(iPeak) = peakHeights(iPeak) ./ sumPeakHeights;
+        weight(iPeak) = peakMags(iPeak) ./ sumResonMags;
+        %weight(iPeak) = peakHeights(iPeak) ./ sumPeakHeights;
       else
-	weight(iPeak) = 0;
+        weight(iPeak) = 0;
       end
 
       vmProbPerPeak(iPeak) = vmDistPerPeak(iPeak,evalAngleIdx).*weight(iPeak);
@@ -194,15 +194,15 @@ for iBand = 1:nBands
       %in a value greater than .5 (since zero bin is directly in the middle
       %when using odd number of bins).
       if(peakPhases(iPeak) > 0)
-	areaIdxs = find((angleDistVector > 0) & (angleDistVector <= peakPhases(iPeak)));
+        areaIdxs = find((angleDistVector > 0) & (angleDistVector <= peakPhases(iPeak)));
       else
-	areaIdxs = find((angleDistVector >= peakPhases(iPeak)) & (angleDistVector < 0));
+        areaIdxs = find((angleDistVector >= peakPhases(iPeak)) & (angleDistVector < 0));
       end
-     
-      vmAreaPerPeak(iPeak) = sum(vmDistPerPeak(iPeak,areaIdxs).*...
-				 weight(iPeak).*(pi/distResolution));    
       
-     
+      vmAreaPerPeak(iPeak) = sum(vmDistPerPeak(iPeak,areaIdxs).*...
+        weight(iPeak).*(pi/distResolution));
+      
+      
       if(PLOT_METER_PREDICTION)
 	
 	nPhasesStartOffset = - 0.1;
